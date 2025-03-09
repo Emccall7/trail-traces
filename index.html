@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trail Traces</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Marker Cluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
+
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@300..900&display=swap">
+
+    <!-- Your custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- PapaParse CSV Parser (For Google Sheets CSV Parsing) -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+    <!-- Full-Screen Map -->
+    <div id="map"></div>
+
+    <!-- Share Button -->
+    <button class="share-btn" id="shareBtn">Share this page</button>
+
+    <!-- Sidebar Container -->
+    <div id="sidebar" class="sidebar">
+        <div id="sidebar-content">
+            <p>Click a marker on the map to see details.</p>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Marker Cluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+    <!-- Your custom script.js -->
+    <script src="script.js"></script>
+
+    <!-- Load the navigation dynamically -->
+    <script>
+        async function loadNav() {
+            const response = await fetch("nav.html");
+            const navHTML = await response.text();
+
+            // Remove any existing nav before inserting new one
+            const existingNav = document.querySelector(".nav-container");
+            if (existingNav) existingNav.remove();
+
+            document.body.insertAdjacentHTML("afterbegin", navHTML);
+
+            // Enable dropdown functionality
+            document.querySelector(".nav-toggle").addEventListener("click", function () {
+                document.querySelector(".nav-menu").classList.toggle("show");
+            });
+
+            // Run Active Page Script After Nav is Loaded
+            const currentPage = window.location.pathname.split("/").pop();
+
+            // Map pages to their corresponding menu link ID
+            const pageMap = {
+                "index.html": "nav-map",
+                "gallery.html": "nav-gallery",
+                "about.html": "nav-about"
+            };
+
+            // Get the ID of the active link
+            const activeLinkId = pageMap[currentPage];
+
+            // If an active link exists, add the "active" class
+            if (activeLinkId) {
+                document.getElementById(activeLinkId).classList.add("active");
+            }
+        }
+
+        loadNav();
+
+        // Share Button Functionality
+        document.getElementById('shareBtn').addEventListener('click', function() {
+            // Get the current URL
+            const currentUrl = window.location.href;
+
+            // Create a temporary text input to copy the URL
+            const tempInput = document.createElement('input');
+            tempInput.value = currentUrl;
+            document.body.appendChild(tempInput);
+
+            // Select and copy the text to the clipboard
+            tempInput.select();
+            document.execCommand('copy');
+
+            // Remove the temporary input field
+            document.body.removeChild(tempInput);
+
+            // Alert the user that the URL is copied
+            alert('URL copied to clipboard!');
+        });
+    </script>
+
+</body>
+</html>

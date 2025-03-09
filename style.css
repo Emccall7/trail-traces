@@ -1,0 +1,292 @@
+/* 🔹 General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 🔹 Global Styles */
+body {
+    font-family: "Source Serif 4", serif;
+    background: white;
+    overflow: hidden;
+}
+
+/* 🔹 Full-Screen Map */
+html, body {
+    height: 100%;
+    width: 100%;
+}
+
+#map {
+    position: absolute;
+    top: 50px; /* Space for header */
+    left: 43vw; /* Sidebar width on desktop */
+    right: 0;
+    bottom: 0;
+}
+
+@media (max-width: 768px) {
+    #map {
+        left: 0;
+        bottom: 33%; /* Sidebar height on mobile */
+        top: 50px;
+    }
+}
+
+/* 🔹 Header Styles */
+.site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 2px solid #008286;
+    z-index: 1000;
+}
+
+.site-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #008286;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 🔹 Sidebar Styles */
+.sidebar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    width: 43vw; /* Desktop width: 3/7 of screen */
+    height: calc(100% - 50px);
+    background: white;
+    border-right: 2px solid #008286;
+    padding: 15px;
+    overflow-y: auto;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+    font-family: "Source Serif 4", serif;
+    z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        width: 100%;
+        height: 33%; /* Mobile height: 1/3 of screen */
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-right: none;
+        border-top: 2px solid #008286;
+        box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+        overflow-y: auto;
+    }
+
+    #map {
+        left: 0;
+        top: 50px;
+        bottom: 33%; /* sidebar height */
+    }
+}
+
+/* 🔹 Sidebar Content Styling - Center Align */
+#sidebar-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* ✅ Center everything */
+    text-align: center;  /* ✅ Ensure text is centered */
+    padding: 15px;
+}
+
+/* 🔹 Large Postcard Image */
+.postcard-image {
+    width: 100%; /* ✅ Max out width */
+    max-height: 60vh; /* ✅ Prevent it from being too tall */
+    object-fit: contain; /* ✅ Ensures the whole image is visible */
+    border-radius: 5px;
+    margin-bottom: 12px;
+}
+
+/* 🔹 Metadata Styling */
+.sidebar h3 {
+    font-size: 22px;
+    color: #008286;
+    margin: 5px 0;
+}
+
+.sidebar p {
+    font-size: 16px;
+    color: #3e3e3e;
+    margin: 5px 0;
+}
+
+/* 🔹 Flip Button Styling */
+#flip-button {
+    margin-top: 10px;
+    padding: 10px 14px;
+    font-size: 16px;
+    font-family: "Source Serif 4", serif;
+    background-color: #008286;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+#flip-button:hover {
+    background-color: #005d5f;
+}
+
+/* 🔹 Navigation Container */
+.nav-container {
+    position: relative;
+}
+
+/* 🔹 Menu Button (☰) */
+.nav-toggle {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: black;
+    padding: 5px 10px;
+}
+
+/* 🔹 Dropdown Menu */
+.nav-menu {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: auto;
+    text-align: right;
+}
+
+/* 🔹 Menu Links */
+.nav-menu a {
+    display: block;
+    color: black;
+    padding: 10px 15px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.nav-menu a:hover {
+    text-decoration: underline;
+}
+
+/* 🔹 Show Menu When Toggled */
+.show {
+    display: block;
+}
+
+/* 🔹 Highlight Active Page */
+.nav-menu a.active {
+    font-weight: 700;
+}
+
+/* 🔹 Responsive Navigation */
+@media (max-width: 600px) {
+    .nav-menu {
+        width: auto;
+    }
+
+    .nav-toggle {
+        font-size: 26px;
+        padding: 5px 8px;
+    }
+
+    #map {
+        left: 0;
+        top: 50px;
+        bottom: 33%; /* height of mobile sidebar */
+        height: calc(100% - 50px - 33%);
+    }
+}
+
+/* 🔹 Marker Styles */
+.custom-marker {
+    width: 20px;
+    height: 20px;
+    background: #008286;
+    border-radius: 50%;
+    opacity: 0.8;
+}
+
+.custom-cluster {
+    background: #008286;
+    border-radius: 50%;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.custom-marker {
+    background: #008286;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    opacity: 0.8;
+}
+
+/* 🔹 Remove leaflet popup styling (since we're using sidebar) */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    display: none;
+}
+
+/* 🔹 Scrollbar styling for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: #008286;
+    border-radius: 4px;
+}
+
+    
+/* 🔹 Share Button Styles */
+.share-buttons {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.share-buttons h4 {
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #008286;
+}
+
+.share-buttons button, .share-buttons a {
+    display: inline-block;
+    margin: 5px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: white;
+    background-color: #008286;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.share-buttons button:hover, .share-buttons a:hover {
+    background-color: #005d5f;
+}
