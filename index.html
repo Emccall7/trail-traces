@@ -22,17 +22,58 @@
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
+    <!-- Header with Title -->
+    <header class="site-header">
+        <h1 class="site-title">TRAIL TRACES</h1>
+    </header>
+
 
     <!-- Full-Screen Map -->
     <div id="map"></div>
-
-    <!-- Share Button -->
-    <button class="share-btn" id="shareBtn">Share this page</button>
-
+    
     <!-- Sidebar Container -->
     <div id="sidebar" class="sidebar">
+        <!-- ✅ Mobile Toggle Container (Sticky) -->
+        <div id="toggle-container">
+            <button id="toggle-sidebar" class="toggle-btn">▼</button>
+        </div>
         <div id="sidebar-content">
-            <p>Click a marker on the map to see details.</p>
+            <p>Select a marker on the map to view details here.</p>
+
+            <!-- Postcard Container (For Image + Flip Button) -->
+            <div class="postcard-container">
+                <img id="postcard-image" class="postcard-image" alt="Postcard Image">
+                <button id="flip-button" class="flip-btn" style="display: none;">⇆</button>
+            </div>
+
+            <p><strong>From:</strong> <span id="postcard-name"></span></p>
+            <p><strong>Location:</strong> <span id="postcard-location"></span></p>
+            <p><strong>Date:</strong> <span id="postcard-date"></span></p>
+
+            <div class="share-buttons">
+                <button id="copy-link" class="share-btn">Share</button>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div id="about-container">
+            <button id="toggle-about">About This Project ▼</button>
+            <div id="about-content" class="hidden">
+                <p>
+                    <strong>Trail Traces</strong> collects postcards from those who walk, support, and are inspired by the Pacific Crest Trail. 
+                    It exists to preserve and share trail experiences—moments of challenge, joy, boredom, frustration, peace, connection—through handwritten notes.
+                </p><br>
+                <p>
+                    The postcards are mailed from places along the trail to a P.O. Box in Oregon, where they are then digitized and uploaded for the community to view, share, and remember. The project was started by Eden McCall, a 2025 northbound PCT thru-hiker, to create a place to share the trail experience with others. 
+                </p><br>
+                <p>
+                    <em>Trail Traces is an independent project and is not affiliated with, sponsored by, or endorsed by any organization, business, or institution.</em>
+                </p><br>
+                <p>
+                    Questions, ideas, or want to contribute? Send a message to:  
+                    <a href="mailto:edenmccall@gmail.com">edenmccall@gmail.com</a>
+                </p>
+            </div>
         </div>
     </div>
 
@@ -47,7 +88,7 @@
 
     <!-- Load the navigation dynamically -->
     <script>
-        async function loadNav() {
+      /*  async function loadNav() {
             const response = await fetch("nav.html");
             const navHTML = await response.text();
 
@@ -81,7 +122,7 @@
             }
         }
 
-        loadNav();
+        loadNav();*/
 
         // Share Button Functionality
         document.getElementById('shareBtn').addEventListener('click', function() {

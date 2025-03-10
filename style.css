@@ -21,20 +21,21 @@ html, body {
 #map {
     position: absolute;
     top: 50px; /* Space for header */
-    left: 43vw; /* Sidebar width on desktop */
+    left: 350px; /* Sidebar width on desktop */
     right: 0;
     bottom: 0;
+    transition: left 0.3s ease-in-out;
 }
 
 @media (max-width: 768px) {
     #map {
         left: 0;
-        bottom: 33%; /* Sidebar height on mobile */
+        bottom: 35%; /* Sidebar height on mobile */
         top: 50px;
     }
 }
 
-/* 🔹 Header Styles */
+/* 🔹 Header Styles (Centered Title) */
 .site-header {
     position: fixed;
     top: 0;
@@ -44,249 +45,251 @@ html, body {
     background: white;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center; /* ✅ Centers the title */
     padding: 0 20px;
     border-bottom: 2px solid #008286;
     z-index: 1000;
+    text-align: center;
 }
 
+/* 🔹 Site Title (Ensure Full Centering) */
 .site-title {
     font-size: 22px;
     font-weight: 700;
     color: #008286;
     text-transform: uppercase;
     letter-spacing: 1px;
+    text-align: center;
+    width: 100%; /* ✅ Ensures the title stays centered */
 }
 
-/* 🔹 Sidebar Styles */
+
+/* 🔹 Sidebar Styling - Desktop */
 .sidebar {
     position: fixed;
     top: 50px;
     left: 0;
-    width: 43vw; /* Desktop width: 3/7 of screen */
+    width: 350px;
     height: calc(100% - 50px);
     background: white;
-    border-right: 2px solid #008286;
+    border-right: 2px solid #008286; /* ✅ Right-side border on desktop */
     padding: 15px;
     overflow-y: auto;
-    box-shadow: 2px 0 6px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
     font-family: "Source Serif 4", serif;
     z-index: 1000;
+    transition: width 0.3s ease-in-out, height 0.3s ease-in-out;
 }
 
+
+/* 🔹 Expanded Sidebar (Desktop) */
+.sidebar.expanded {
+    width: 75vw; /* 75% width on desktop */
+}
+
+.sidebar.expanded + #map {
+    left: 75vw; /* Adjust map position */
+}
+
+/* 🔹 Sidebar (Mobile) - **Fixed to Bottom** */
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
         width: 100%;
-        height: 33%; /* Mobile height: 1/3 of screen */
+        height: 35%; /* Default height */
+        bottom: 0; /* Keep it fixed at the bottom */
         top: auto;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        border-right: none;
-        border-top: 2px solid #008286;
-        box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
-        overflow-y: auto;
+        padding-top: 0 !important;
+        padding-bot: 0 !important;/* Prevent it from aligning to top */
+        border-right: none; /* ✅ Remove right border on mobile */
+        border-top: 2px solid #008286; /* ✅ Add border to the top on mobile */
+        transition: height 0.3s ease-in-out;
     }
 
-    #map {
-        left: 0;
-        top: 50px;
-        bottom: 33%; /* sidebar height */
+    /* 🔹 Expanded Sidebar (Mobile) */
+    .sidebar.expanded {
+        height: 80vh; /* Expand upwards */
+        width: 100vw; /* 75% width on desktop */
+    }
+
+    .sidebar.expanded + #map {
+        bottom: 80vh; /* Adjust map height */
     }
 }
 
-/* 🔹 Sidebar Content Styling - Center Align */
+/* 🔹 Sidebar Toggle Button */
+#toggle-sidebar {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #008286;
+    transition: transform 0.2s ease, color 0.3s ease;
+}
+
+/* 🔹 Desktop: Right Edge, Centered Vertically */
+@media (min-width: 769px) {
+    #toggle-sidebar {
+        position: absolute;
+        top: 50%;
+        right: 5px; /* Moves it outside sidebar */
+        transform: translateY(-50%);
+    }
+}
+
+/* 🔹 Mobile: **Sticky at Top of Sidebar** */
+@media (max-width: 768px) {
+    #toggle-container {
+        position: sticky;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        
+        text-align: center;
+        z-index: 1000;
+        border-bottom: 2px solid #ddd;
+        margin: 0; /* Removes any extra space */
+    }
+
+    #toggle-sidebar {
+        font-size: 24px;
+    }
+}
+
+/* 🔹 Sidebar Content Styling */
 #sidebar-content {
     display: flex;
     flex-direction: column;
-    align-items: center; /* ✅ Center everything */
-    text-align: center;  /* ✅ Ensure text is centered */
+    align-items: center;
+    text-align: center;
     padding: 15px;
 }
 
-/* 🔹 Large Postcard Image */
-.postcard-image {
-    width: 100%; /* ✅ Max out width */
-    max-height: 60vh; /* ✅ Prevent it from being too tall */
-    object-fit: contain; /* ✅ Ensures the whole image is visible */
-    border-radius: 5px;
-    margin-bottom: 12px;
-}
-
-/* 🔹 Metadata Styling */
-.sidebar h3 {
-    font-size: 22px;
-    color: #008286;
-    margin: 5px 0;
-}
-
-.sidebar p {
-    font-size: 16px;
-    color: #3e3e3e;
-    margin: 5px 0;
-}
-
-/* 🔹 Flip Button Styling */
-#flip-button {
-    margin-top: 10px;
-    padding: 10px 14px;
-    font-size: 16px;
-    font-family: "Source Serif 4", serif;
-    background-color: #008286;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease-in-out;
-}
-
-#flip-button:hover {
-    background-color: #005d5f;
-}
-
-/* 🔹 Navigation Container */
-.nav-container {
+.postcard-container {
     position: relative;
-}
-
-/* 🔹 Menu Button (☰) */
-.nav-toggle {
-    background: none;
-    border: none;
-    font-size: 30px;
-    cursor: pointer;
-    color: black;
-    padding: 5px 10px;
-}
-
-/* 🔹 Dropdown Menu */
-.nav-menu {
-    display: none;
-    position: absolute;
-    top: 50px;
-    right: 0;
-    width: auto;
-    text-align: right;
-}
-
-/* 🔹 Menu Links */
-.nav-menu a {
-    display: block;
-    color: black;
-    padding: 10px 15px;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.nav-menu a:hover {
-    text-decoration: underline;
-}
-
-/* 🔹 Show Menu When Toggled */
-.show {
-    display: block;
-}
-
-/* 🔹 Highlight Active Page */
-.nav-menu a.active {
-    font-weight: 700;
-}
-
-/* 🔹 Responsive Navigation */
-@media (max-width: 600px) {
-    .nav-menu {
-        width: auto;
-    }
-
-    .nav-toggle {
-        font-size: 26px;
-        padding: 5px 8px;
-    }
-
-    #map {
-        left: 0;
-        top: 50px;
-        bottom: 33%; /* height of mobile sidebar */
-        height: calc(100% - 50px - 33%);
-    }
-}
-
-/* 🔹 Marker Styles */
-.custom-marker {
-    width: 20px;
-    height: 20px;
-    background: #008286;
-    border-radius: 50%;
-    opacity: 0.8;
-}
-
-.custom-cluster {
-    background: #008286;
-    border-radius: 50%;
-    opacity: 0.8;
+    max-height: 80vh; /* ✅ Ensures it never exceeds 80% of the viewport height */
+    overflow: hidden; /* ✅ Prevents it from growing beyond this */
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
 }
 
-.custom-marker {
-    background: #008286;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    opacity: 0.8;
+.postcard-image {
+    max-width: 100%;  /* ✅ Ensures the image scales correctly */
+    max-height: 75vh; /* ✅ Prevents the image from taking more than 75vh */
+    object-fit: contain; /* ✅ Ensures full image visibility without stretching */
 }
 
-/* 🔹 Remove leaflet popup styling (since we're using sidebar) */
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    display: none;
+/* ✅ Flip button stays aligned to the bottom right */
+.flip-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 130, 134, 0.8);
+    border: none;
+    color: white;
+    font-size: 20px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
 }
 
-/* 🔹 Scrollbar styling for sidebar */
-.sidebar::-webkit-scrollbar {
-    width: 8px;
+
+.flip-btn:hover {
+    background: rgba(0, 130, 134, 1);
 }
 
-.sidebar::-webkit-scrollbar-track {
-    background: #f0f0f0;
-}
 
-.sidebar::-webkit-scrollbar-thumb {
-    background-color: #008286;
-    border-radius: 4px;
-}
 
-    
-/* 🔹 Share Button Styles */
-.share-buttons {
-    margin-top: 15px;
+/* 🔹 About Section */
+#about-container {
+    margin-top: 20px;
+    padding: 10px;
+    border-top: 2px solid #008286;
     text-align: center;
 }
 
-.share-buttons h4 {
+#toggle-about {
+    background: none;
+    border: none;
     font-size: 16px;
-    margin-bottom: 5px;
+    font-weight: bold;
     color: #008286;
+    cursor: pointer;
+    width: 100%;
+    padding: 8px 0;
 }
 
-.share-buttons button, .share-buttons a {
-    display: inline-block;
-    margin: 5px;
-    padding: 8px 12px;
+#toggle-about:hover {
+    text-decoration: underline;
+}
+
+/* 🔹 About Section Visibility */
+#about-content {
+    display: none;
     font-size: 14px;
+    color: #3e3e3e;
+    margin-top: 10px;
+}
+
+/* 🔹 Show About Section */
+#about-content.visible {
+    display: block;
+}
+
+/* ✅ Default Marker Style */
+.custom-marker {
+    width: 20px;
+    height: 20px;
+    background: #008286;
+    border-radius: 50%; /* Ensures circular shape */
+    opacity: 0.8;
+    transition: all 0.2s ease-in-out;
+}
+
+/* ✅ Highlighted Marker (Ensures it Stays Circular) */
+.custom-marker.selected {
+    width: 25px;
+    height: 25px;
+    background: #FFA500; /* Orange highlight */
+    border-radius: 50%; /* Ensures it stays circular */
+    border: 3px solid white;
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.7);
+}
+
+/* 🔹 Share Button Styling */
+.share-btn, .share-button {
+    display: flex;
+    justify-content: center; /* ✅ Centers text horizontally */
+    align-items: center;  /* ✅ Centers text vertically */
+    text-align: center;  /* ✅ Ensures consistent centering */
+    
+    width: 90%;  /* ✅ Ensures it fits neatly in sidebar */
+    max-width: 200px; /* ✅ Prevents excessive stretching */
+    margin: 10px auto; /* ✅ Centers inside the sidebar */
+    padding: 10px 14px;
+    font-size: 16px;
+    font-weight: bold;
     color: white;
-    background-color: #008286;
+    background-color: #008286; /* ✅ Matches theme */
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    text-decoration: none;
+    transition: background 0.3s ease-in-out, transform 0.2s ease;
 }
 
-.share-buttons button:hover, .share-buttons a:hover {
+/* 🔹 Hover and Click Effects */
+.share-btn:hover, .share-button:hover {
     background-color: #005d5f;
+    transform: scale(1.05);
 }
+
+.share-btn:active, .share-button:active {
+    background-color: #003c3f;
+    transform: scale(0.95);
+}
+
+

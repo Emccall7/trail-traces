@@ -1,8 +1,21 @@
-// ✅ Initialize the map
+// ✅ Define the bounding box for the PCT region
+const pctBounds = [
+    [25, -140], // Southwest corner
+    [55, -100]  // Northeast corner
+];
+
+// ✅ Initialize the map with set boundaries and zoom constraints
 const map = L.map('map', {
     minZoom: 5,
-    maxZoom: 10
+    maxZoom: 16,
+    maxBounds: pctBounds,  // Restrict panning
+    maxBoundsViscosity: 0.8, // Adds resistance when nearing boundaries
+    zoomControl: false
 }).setView([41.5, -120], 6);
+
+// ✅ Optional: Prevent "bouncing" when hitting the edges
+map.options.worldCopyJump = false;
+map.options.inertia = false;
 
 // ✅ Load CartoDB Positron (Base Layer with Labels)
 const cartoBasemap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -36,17 +49,21 @@ const hillshadeLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/
     maxZoom: 16
 }).addTo(map);
 
-// ✅ Initialize Marker Cluster Group (Ensure Postcards Stay **Above** Everything Else)
-const markers = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    maxClusterRadius: 40
-});
 
-// ✅ Add markers on top of everything else
-map.addLayer(markers);
+// ✅ Define Amazon S3 Bucket Base URL
+const S3_BASE_URL = "https://trail-traces-images.s3.us-east-2.amazonaws.com/";
 
 // ✅ Google Sheets CSV URL
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQx9Mem_WIOPZzLB0kdWXEiHNH1PYJGFMr-vjGWEDOFUG4nDApkazyXjgzsplriSvT4UemacswhvDrD/pub?output=csv";
+
+// ✅ Track active marker
+let activeMarker = null;
+const postcards = [];
+
+// ✅ Function to ensure image URLs follow S3 naming convention
+function getS3ImageURL(postcardID, type) {
+    return `${S3_BASE_URL}${postcardID}_${type}.jpg`;  // "1001_F.jpg" or "1001_B.jpg"
+}
 
 // ✅ Function to update the URL with the selected postcard ID
 function updateURL(postcardID) {
@@ -67,122 +84,214 @@ function copyToClipboard(text) {
     }).catch(err => console.error("Error copying to clipboard:", err));
 }
 
-// ✅ Function to generate only the "Copy Link" button
-function generateShareLinks(postcardID) {
-    const shareURL = encodeURIComponent(`${window.location.origin}${window.location.pathname}?id=${postcardID}`);
-    
-    return `
-        <button id="copy-link" class="share-button">Share</button>
-    `;
+// ✅ Generate Share Button with Correct Class
+function generateShareButton(postcardID) {
+    return `<button id="copy-link" class="share-btn">Share</button>`;
 }
 
-// ✅ Load Postcard Markers
+// ✅ Initialize Marker Cluster Group (Ensure Postcards Stay Above Everything Else)
+const markers = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    maxClusterRadius: 40
+});
+
+// ✅ Fetch and Load Postcards
 fetch(sheetURL)
     .then(response => response.text())
     .then(csvText => {
         const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-        const postcards = [];
 
         parsed.data.forEach(row => {
             const lat = parseFloat(row["Latitude"]);
             const lon = parseFloat(row["Longitude"]);
-            const postcardID = row["postcardID"]?.trim();  // ✅ Ensure ID is stored
-            const placePosted = row["PlacePosted"]?.trim() || "Unknown Place";
+            const postcardID = row["postcardID"]?.trim();
+
+            if (isNaN(lat) || isNaN(lon)) {
+                console.warn(`Skipping invalid postcard ${postcardID} due to missing coordinates.`);
+                return;
+            }
+
+            const placePosted = row["PlacePosted"]?.trim() || "Unknown Location";
             const datePosted = row["DatePosted"]?.trim() || "Unknown Date";
-            let imageFrontURL = row["imageFrontURL"]?.trim();
-            let imageBackURL = row["imageBackURL"]?.trim();
+            let imageFrontURL = getS3ImageURL(postcardID, "F");
+            let imageBackURL = getS3ImageURL(postcardID, "B");
             const name = row["Name"]?.trim() || "Unknown";
-            const contact = row["Contact"]?.trim() || "";
 
-            function convertDriveURL(url) {
-                if (url.includes("drive.google.com/thumbnail?id=")) {
-                    return url.replace("thumbnail?id=", "uc?export=view&id=");
-                }
-                return url;
-            }
+            console.log(`Adding marker: ${postcardID} at (${lat}, ${lon})`);
 
-            imageFrontURL = convertDriveURL(imageFrontURL);
-            imageBackURL = convertDriveURL(imageBackURL);
+            // ✅ Create Marker
+            const marker = L.marker([lat, lon], {
+                icon: L.divIcon({
+                    html: `<div class="custom-marker" data-id="${postcardID}"></div>`,
+                    className: 'custom-marker-container',
+                    iconSize: [20, 20]
+                })
+            });
 
-            if (!isNaN(lat) && !isNaN(lon)) {
-                const marker = L.marker([lat, lon], {
-                    icon: L.divIcon({
-                        html: `<div class="custom-marker"></div>`,
-                        className: 'custom-marker-container',
-                        iconSize: [20, 20]
-                    })
-                });
+            // ✅ Store Postcard Data
+            const postcardData = { postcardID, placePosted, datePosted, imageFrontURL, imageBackURL, name };
+            postcards.push(postcardData);
 
-                const postcardData = { postcardID, placePosted, datePosted, imageFrontURL, imageBackURL, name, contact };
-                postcards.push(postcardData);
+            // ✅ Marker Click Function
+            marker.on('click', function () {
+                updateSidebar(postcardData);
+                highlightMarker(postcardID);
+            });
 
-                marker.on('click', function () {
-                    updateSidebar(postcardData);
-                });
-
-                markers.addLayer(marker);
-            }
+            markers.addLayer(marker);
         });
 
         map.addLayer(markers);
-        selectPostcardFromURL(postcards); // ✅ Open postcard if ID exists in URL
+
+        // ✅ Ensure postcards are fully loaded before selecting a random one
+        setTimeout(() => {
+            selectPostcardFromURL();
+        }, 500);
     })
     .catch(error => console.error("Error loading postcard data:", error));
 
-// ✅ Function to load and select a specific postcard based on URL
-function selectPostcardFromURL(postcards) {
-    const postcardID = getPostcardIDFromURL();
-    if (!postcardID) return;
+// ✅ Function to select a postcard from the URL or load a random one
+function selectPostcardFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const postcardID = params.get("id");
 
-    const selectedPostcard = postcards.find(p => p.postcardID === postcardID);
-    if (selectedPostcard) {
-        updateSidebar(selectedPostcard);
+    if (postcardID) {
+        // ✅ If a postcard is already selected in the URL, load it
+        const selectedPostcard = postcards.find(p => p.postcardID === postcardID);
+        if (selectedPostcard) {
+            updateSidebar(selectedPostcard);
+            highlightMarker(postcardID);
+        }
+    } else {
+        // ✅ If no postcard is in the URL, select a random one
+        selectRandomPostcard();
     }
 }
 
-// ✅ Update Sidebar Content & Update URL
+// ✅ Function to randomly select a postcard and display it
+function selectRandomPostcard() {
+    if (postcards.length === 0) {
+        console.warn("No postcards available to select.");
+        return;
+    }
+
+    const randomPostcard = postcards[Math.floor(Math.random() * postcards.length)];
+    updateSidebar(randomPostcard);
+    highlightMarker(randomPostcard.postcardID);
+    updateURL(randomPostcard.postcardID);
+}
+
+
+// ✅ Function to Highlight Active Marker
+function highlightMarker(postcardID) {
+    document.querySelectorAll('.custom-marker').forEach(marker => {
+        marker.classList.remove('selected'); // ✅ Remove previous highlight
+        if (marker.dataset.id === postcardID) {
+            marker.classList.add('selected'); // ✅ Add highlight to active marker
+        }
+    });
+}
+
+
+const sidebarContent = document.getElementById('sidebar-content');
+sidebarContent.innerHTML = `<p>Loading postcards...</p>`;
+
 function updateSidebar(data) {
+    if (!data) {
+        // ✅ If no postcard is selected yet, show this message
+        document.getElementById('sidebar-content').innerHTML = `<p>Click on a marker in the map to view a postcard.</p>`;
+        return;
+    }
+
     const sidebarContent = document.getElementById('sidebar-content');
     sidebarContent.innerHTML = `
-        <img id="postcard-image" src="${data.imageFrontURL}" class="postcard-image" alt="Postcard Image">
+        <div class="postcard-container">
+            <img id="postcard-image" class="postcard-image" src="${data.imageFrontURL}" alt="Postcard Image">
+            ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
+        </div>
 
-        <p><strong>From:</strong> ${data.name}</p>
-        <p><strong>Location:</strong> ${data.placePosted}</p>
-        <p><strong>Date:</strong> ${data.datePosted}</p>
+        <p><strong>From:</strong> <span id="postcard-name">${data.name}</span></p>
+        <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted}</span></p>
+        <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
 
-        ${data.imageBackURL ? `<button id="flip-button">Flip to Back</button>` : ""}
-        
         <div class="share-buttons">
-            ${generateShareLinks(data.postcardID)}
+            <button id="copy-link" class="share-btn">Share</button>
         </div>
     `;
 
-    // ✅ Update URL when a postcard is clicked
     updateURL(data.postcardID);
+    highlightMarker(data.postcardID);
 
-    // ✅ Flip Button Functionality
-    if (data.imageBackURL) {
-        const flipButton = document.getElementById('flip-button');
-        const postcardImage = document.getElementById('postcard-image');
+    // ✅ Ensure Flip Button Works
+    const flipButton = document.getElementById('flip-button');
+    const postcardImage = document.getElementById('postcard-image');
+
+    if (flipButton && postcardImage) {
         let showingFront = true;
+        flipButton.style.display = "block";
 
         flipButton.addEventListener('click', function () {
-            if (showingFront) {
-                postcardImage.src = data.imageBackURL;
-                flipButton.textContent = "Flip to Front";
-            } else {
-                postcardImage.src = data.imageFrontURL;
-                flipButton.textContent = "Flip to Back";
-            }
             showingFront = !showingFront;
+            postcardImage.src = showingFront ? data.imageFrontURL : data.imageBackURL;
         });
     }
 
     // ✅ Copy Link Functionality
     document.getElementById('copy-link').addEventListener('click', () => {
-        copyToClipboard(`${window.location.origin}${window.location.pathname}?id=${data.postcardID}`);
+        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?id=${data.postcardID}`)
+            .then(() => alert("Link copied to clipboard!"))
+            .catch(err => console.error("Error copying to clipboard:", err));
     });
 }
 
-// ✅ Initial sidebar content
-document.getElementById('sidebar-content').innerHTML = `<p>Select a marker on the map to view details here.</p>`;
+
+
+
+
+
+// ✅ Toggle About Section
+document.getElementById("toggle-about").addEventListener("click", function () {
+    const aboutContent = document.getElementById("about-content");
+    aboutContent.classList.toggle("visible");
+    this.textContent = aboutContent.classList.contains("visible") 
+        ? "About This Project ▲" 
+        : "About This Project ▼";
+});
+
+// ✅ FOR SIDEBAR:
+
+// ✅ Select elements
+const sidebar = document.getElementById('sidebar');
+const toggleButton = document.getElementById('toggle-sidebar');
+
+// ✅ Detect if user is on mobile
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+// ✅ Set initial state (closed)
+let isExpanded = false;
+toggleButton.innerHTML = isMobile() ? '▲' : '▶'; // `›` for right, `▲` for up "▼
+
+// ✅ Function to toggle sidebar
+function toggleSidebar() {
+    isExpanded = !isExpanded;
+
+    if (isExpanded) {
+        sidebar.classList.add('expanded');
+        toggleButton.innerHTML = isMobile() ? '▼' : '◀'; // `‹` for left, `▼` for down
+    } else {
+        sidebar.classList.remove('expanded');
+        toggleButton.innerHTML = isMobile() ? '▲' : '▶'; // `›` for right, `▲` for up
+    }
+}
+
+// ✅ Attach event listener to toggle button
+toggleButton.addEventListener('click', toggleSidebar);
+
+// ✅ Update caret when resizing
+window.addEventListener('resize', () => {
+    toggleButton.innerHTML = isExpanded ? (isMobile() ? '▼' : '◀') : (isMobile() ? '▲' : '▶');
+});
+
+
