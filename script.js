@@ -15,6 +15,10 @@ galleryButton.addEventListener('click', function() {
         galleryView.style.display = 'none';
         mapView.style.display = 'block';
         galleryButton.textContent = 'View Gallery';
+        gtag('event', 'toggle_view', {
+            'event_category': 'Interaction',
+            'event_label': 'Switched to Map'
+        });
         if (selectedPostcardID) {
             console.log("Switching to Map View - Selected Postcard:", selectedPostcardID);
             highlightMarker(selectedPostcardID);
@@ -29,6 +33,10 @@ galleryButton.addEventListener('click', function() {
         galleryButton.textContent = 'View Map';
         populateGallery();
         highlightSelectedCard(); // ✅ Highlight in Gallery
+        gtag('event', 'toggle_view', {
+            'event_category': 'Interaction',
+            'event_label': 'Switched to Gallery'
+        });
     }
 });
 
@@ -116,7 +124,14 @@ async function updateSidebar(data) {
     copyButton.addEventListener('click', () => {
         const link = `${window.location.origin}${window.location.pathname}?id=${data.postcardID}`;
         navigator.clipboard.writeText(link)
-            .then(() => alert("Link copied to clipboard!"))
+            .then(() => {
+                alert("Link copied to clipboard!");
+                // ✅ Google Analytics Event Tracking
+                gtag('event', 'share_link', {
+                    'event_category': 'Interaction',
+                    'event_label': 'Copied Link'
+                });
+            })
             .catch(err => console.error("Error copying link: ", err));
     });
 }
