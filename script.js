@@ -1,5 +1,6 @@
-// ✅ Global Variable to Track Selected Postcard
+// ✅ Global Variable to Track Selected Postcard and Initial Load
 let selectedPostcardID = null;
+let initialLoad = true; // ✅ Track if it's the first load
 
 // ✅ Toggle between Map View and Gallery View
 const galleryButton = document.getElementById('toggle-gallery');
@@ -89,6 +90,11 @@ async function updateSidebar(data) {
         return;
     }
 
+    // ✅ Check if Anonymous field is marked as 'Y'
+    const displayName = data.anonymous === 'Y' ? 'Anonymous' : data.name;
+    console.log(`Sidebar - Postcard ${data.postcardID} Name: ${displayName} (Anonymous: ${data.anonymous})`);
+
+
     const sidebarContent = document.getElementById('sidebar-content');
     sidebarContent.innerHTML = `
         <div class="postcard-container">
@@ -97,7 +103,7 @@ async function updateSidebar(data) {
             <button id="rotate-button" class="rotate-btn">↻</button>
         </div>
 
-        <p><strong>From:</strong> <span id="postcard-name">${data.name}</span></p>
+        <p><strong>From:</strong> <span id="postcard-name">${displayName}</span></p>
         <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted}</span></p>
         <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
 
@@ -141,6 +147,9 @@ async function updateSidebar(data) {
             })
             .catch(err => console.error("Error copying link: ", err));
     });
+
+     // ✅ Update the URL when loading the sidebar
+     updateURL(data.postcardID);
 }
 
 
@@ -282,6 +291,9 @@ fetch(sheetURL)
             let imageFrontURL = getS3ImageURL(postcardID, "F");
             let imageBackURL = getS3ImageURL(postcardID, "B");
             const name = row["Name"]?.trim() || "Unknown";
+            const anonymous = row["Anonymous"]?.trim() || "N"; // ✅ Read 'Anonymous' field
+
+            console.log(`Loading Postcard ${postcardID} - Anonymous: ${anonymous}`);
 
             console.log(`Adding marker: ${postcardID} at (${lat}, ${lon})`);
 
@@ -302,6 +314,7 @@ fetch(sheetURL)
                 imageFrontURL,
                 imageBackURL,
                 name,
+                anonymous, 
                 lat, // ✅ Storing lat/lon directly in the postcard object
                 lon
             };
@@ -394,6 +407,8 @@ function highlightMarker(postcardID) {
         }
     });
 }
+
+
 // ✅ Function to Auto-Pan Map to Marker with Consistent Cluster View
 function panToMarker(postcard) {
     const lat = parseFloat(postcard.lat);
@@ -404,17 +419,27 @@ function panToMarker(postcard) {
         const marker = markers.getLayers().find(marker => marker.getLatLng().lat === lat && marker.getLatLng().lng === lon);
 
         if (marker) {
-            // ✅ Directly show the marker without changing zoom level
-            markers.zoomToShowLayer(marker, () => {
-                map.setView(marker.getLatLng(), map.getZoom(), { animate: true });
-                marker.openPopup();
-                console.log("Marker shown without changing zoom.");
-                highlightMarker(postcard.postcardID); // ✅ Ensure highlight
-            });
+            if (initialLoad) {
+                // ✅ On initial load, pan to the marker without zooming in
+                console.log("Initial load - panning without zooming.");
+                map.setView(marker.getLatLng(), 8, { animate: true });
+            } else {
+                // ✅ For subsequent selections, use zoom-to-cluster behavior
+                markers.zoomToShowLayer(marker, () => {
+                    map.setView(marker.getLatLng(), map.getZoom(), { animate: true });
+                    marker.openPopup();
+                    console.log("Marker shown without changing zoom.");
+                    highlightMarker(postcard.postcardID);
+                });
+            }
+
+            // ✅ Mark that the first load has completed
+            initialLoad = false;
         } else {
             console.warn("Marker not found in cluster. Panning directly.");
-            map.setView([lat, lon], map.getZoom(), { animate: true });
-            highlightMarker(postcard.postcardID); // ✅ Ensure highlight
+            map.setView([lat, lon], initialLoad ? 8 : map.getZoom(), { animate: true });
+            highlightMarker(postcard.postcardID);
+            initialLoad = false;
         }
     } else {
         console.error("Invalid coordinates for postcard (lat/lon):", postcard);
@@ -585,6 +610,10 @@ function populateGallery() {
         img.alt = `Postcard from ${postcard.placePosted}`;
         img.loading = 'lazy';
 
+        // ✅ Display name with 'Anonymous' if flagged
+        const displayName = postcard.anonymous === 'Y' ? 'Anonymous' : postcard.name;
+        console.log(`Gallery - Postcard ${postcard.postcardID} Name: ${displayName} (Anonymous: ${postcard.anonymous})`);
+
         // ✅ Click event to load sidebar with postcard
         card.addEventListener('click', function() {
             selectedPostcardID = postcard.postcardID; // ✅ Track selected postcard
@@ -723,7 +752,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Loading Initial Postcard...");
     selectPostcardFromURL();
 });
-
 
 
 

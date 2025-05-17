@@ -464,6 +464,7 @@ html, body {
     border-radius: 50%; /* Ensures circular shape */
     opacity: 0.8;
     transition: all 0.2s ease-in-out;
+    font-family: "Source Serif 4", serif;
 }
 
 /* ✅ Highlighted Marker (Ensures it Stays Circular) */
