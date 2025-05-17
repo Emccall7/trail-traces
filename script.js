@@ -1,3 +1,135 @@
+// ✅ Global Variable to Track Selected Postcard
+let selectedPostcardID = null;
+
+// ✅ Toggle between Map View and Gallery View
+const galleryButton = document.getElementById('toggle-gallery');
+const mapView = document.getElementById('map');
+const galleryView = document.getElementById('gallery-view');
+
+
+// ✅ Switch between views
+galleryButton.addEventListener('click', function() {
+    const isGalleryVisible = galleryView.style.display === 'flex';
+
+    if (isGalleryVisible) {
+        galleryView.style.display = 'none';
+        mapView.style.display = 'block';
+        galleryButton.textContent = 'View Gallery';
+        if (selectedPostcardID) {
+            console.log("Switching to Map View - Selected Postcard:", selectedPostcardID);
+            highlightMarker(selectedPostcardID);
+            const postcard = postcards.find(p => p.postcardID === selectedPostcardID);
+            console.log("Postcard found for panning:", postcard);
+            if (postcard) panToMarker(postcard);
+        }
+    } else {
+        console.log("Switching to Gallery View");
+        galleryView.style.display = 'flex';
+        mapView.style.display = 'none';
+        galleryButton.textContent = 'View Map';
+        populateGallery();
+        highlightSelectedCard(); // ✅ Highlight in Gallery
+    }
+});
+
+
+
+
+// ✅ Function to Populate Gallery
+function populateGallery() {
+    galleryView.innerHTML = '';
+
+    postcards.forEach(postcard => {
+        const card = document.createElement('div');
+        card.className = 'gallery-card';
+
+        const img = document.createElement('img');
+        img.src = showBacks ? getS3ImageURL(postcard.postcardID, 'B') : getS3ImageURL(postcard.postcardID, 'F');
+        img.alt = `Postcard from ${postcard.placePosted}`;
+        img.loading = 'lazy';
+
+        // ✅ Click event to load sidebar with postcard
+        card.addEventListener('click', function() {
+            selectedPostcardID = postcard.postcardID; // ✅ Track selected postcard
+            console.log("Selected Postcard in Gallery:", selectedPostcardID);
+            updateSidebar(postcard);
+            highlightMarker(postcard.postcardID); // ✅ Highlight on Map
+            highlightSelectedCard(); // ✅ Highlight in Gallery
+        });
+
+        card.appendChild(img);
+        galleryView.appendChild(card);
+    });
+}
+
+// ✅ Function to Highlight the Selected Card in Gallery
+function highlightSelectedCard() {
+    document.querySelectorAll('.gallery-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    const selectedCard = document.querySelector(`.gallery-card img[src*="${selectedPostcardID}_F.jpg"]`);
+    if (selectedCard) {
+        selectedCard.parentElement.classList.add('selected');
+    }
+}
+
+// ✅ Updating the sidebar function to use async for the image
+async function updateSidebar(data) {
+    if (!data) {
+        document.getElementById('sidebar-content').innerHTML = `<p>Select a marker or postcard to view details here.</p>`;
+        return;
+    }
+
+    const sidebarContent = document.getElementById('sidebar-content');
+    sidebarContent.innerHTML = `
+        <div class="postcard-container">
+            <img id="postcard-image" class="postcard-image" src="${showBacks ? await getS3ImageURL(data.postcardID, 'B') : await getS3ImageURL(data.postcardID, 'F')}" alt="Postcard Image">
+            ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
+        </div>
+
+        <p><strong>From:</strong> <span id="postcard-name">${data.name}</span></p>
+        <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted}</span></p>
+        <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
+
+        <div class="share-buttons">
+            <button id="copy-link" class="share-btn">Share</button>
+        </div>
+    `;
+
+    // ✅ Flip Button Logic
+    const flipButton = document.getElementById('flip-button');
+    const postcardImage = document.getElementById('postcard-image');
+
+    if (flipButton && postcardImage && data.imageBackURL) {
+        let showingFront = true;
+        flipButton.style.display = "block";
+
+        flipButton.addEventListener('click', function () {
+            showingFront = !showingFront;
+            postcardImage.src = showingFront ? data.imageFrontURL : data.imageBackURL;
+        });
+    }
+
+    // ✅ Copy Link Functionality
+    const copyButton = document.getElementById('copy-link');
+    copyButton.addEventListener('click', () => {
+        const link = `${window.location.origin}${window.location.pathname}?id=${data.postcardID}`;
+        navigator.clipboard.writeText(link)
+            .then(() => alert("Link copied to clipboard!"))
+            .catch(err => console.error("Error copying link: ", err));
+    });
+}
+
+
+
+
+
+
+///////////////////////////////////////////
+
+
+
 // ✅ Define the bounding box for the PCT region
 const pctBounds = [
     [25, -140], // Southwest corner
@@ -60,9 +192,21 @@ const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQx9Mem_WIOPZz
 let activeMarker = null;
 const postcards = [];
 
-// ✅ Function to ensure image URLs follow S3 naming convention
+// ✅ Function to ensure image URLs follow S3 naming convention (.jpg or .JPG)
 function getS3ImageURL(postcardID, type) {
-    return `${S3_BASE_URL}${postcardID}_${type}.jpg`;  // "1001_F.jpg" or "1001_B.jpg"
+    const lowerCaseURL = `${S3_BASE_URL}${postcardID}_${type}.jpg`;
+    const upperCaseURL = `${S3_BASE_URL}${postcardID}_${type}.JPG`;
+
+    // ✅ Create an Image object to test loading
+    const testImage = new Image();
+    testImage.src = lowerCaseURL;
+
+    // ✅ If it loads, return it; if not, fallback to .JPG
+    testImage.onerror = () => {
+        testImage.src = upperCaseURL;
+    };
+
+    return testImage.src;
 }
 
 // ✅ Function to update the URL with the selected postcard ID
@@ -124,22 +268,56 @@ fetch(sheetURL)
                 icon: L.divIcon({
                     html: `<div class="custom-marker" data-id="${postcardID}"></div>`,
                     className: 'custom-marker-container',
-                    iconSize: [20, 20]
+                    iconSize: [15, 15]
                 })
             });
 
-            // ✅ Store Postcard Data
-            const postcardData = { postcardID, placePosted, datePosted, imageFrontURL, imageBackURL, name };
+            // ✅ Store Postcard Data (including lat/lon)
+            const postcardData = {
+                postcardID,
+                placePosted,
+                datePosted,
+                imageFrontURL,
+                imageBackURL,
+                name,
+                lat, // ✅ Storing lat/lon directly in the postcard object
+                lon
+            };
             postcards.push(postcardData);
 
             // ✅ Marker Click Function
             marker.on('click', function () {
                 updateSidebar(postcardData);
                 highlightMarker(postcardID);
+                selectedPostcardID = postcardID;
+                console.log("Selected Postcard (Map Click):", selectedPostcardID);
             });
 
             markers.addLayer(marker);
+            sortPostcards(); // ✅ Ensure postcards are sorted immediately
+            
         });
+
+        // ✅ Function to Sort Postcards (Used Immediately After Loading)
+        function sortPostcards() {
+            postcards.sort((a, b) => {
+                if (sortOrder === "date-desc") {
+                    return new Date(b.datePosted) - new Date(a.datePosted);
+                } else if (sortOrder === "date-asc") {
+                    return new Date(a.datePosted) - new Date(b.datePosted);
+                } else if (sortOrder === "south-north-asc") {
+                    return parseFloat(a.lat) - parseFloat(b.lat);
+                } else if (sortOrder === "south-north-desc") {
+                    return parseFloat(b.lat) - parseFloat(a.lat);
+                } else if (sortOrder === "recent-asc") {
+                    return parseInt(a.postcardID) - parseInt(b.postcardID);
+                } else if (sortOrder === "recent-desc") {
+                    return parseInt(b.postcardID) - parseInt(a.postcardID);
+                }
+                return 0; // Default no sort
+            });
+            console.log("Postcards Sorted:", sortOrder, postcards);
+        }
 
         map.addLayer(markers);
 
@@ -150,7 +328,7 @@ fetch(sheetURL)
     })
     .catch(error => console.error("Error loading postcard data:", error));
 
-// ✅ Function to select a postcard from the URL or load a random one
+// ✅ Trigger Initial Selection (URL or Random)
 function selectPostcardFromURL() {
     const params = new URLSearchParams(window.location.search);
     const postcardID = params.get("id");
@@ -159,8 +337,10 @@ function selectPostcardFromURL() {
         // ✅ If a postcard is already selected in the URL, load it
         const selectedPostcard = postcards.find(p => p.postcardID === postcardID);
         if (selectedPostcard) {
-            updateSidebar(selectedPostcard);
-            highlightMarker(postcardID);
+            selectPostcard(selectedPostcard);
+        } else {
+            console.warn("Postcard ID in URL not found. Selecting random postcard.");
+            selectRandomPostcard();
         }
     } else {
         // ✅ If no postcard is in the URL, select a random one
@@ -176,73 +356,107 @@ function selectRandomPostcard() {
     }
 
     const randomPostcard = postcards[Math.floor(Math.random() * postcards.length)];
-    updateSidebar(randomPostcard);
-    highlightMarker(randomPostcard.postcardID);
-    updateURL(randomPostcard.postcardID);
+    console.log("Randomly Selected Postcard:", randomPostcard);
+
+    selectPostcard(randomPostcard);
 }
 
 
 // ✅ Function to Highlight Active Marker
 function highlightMarker(postcardID) {
+    console.log("Highlighting Marker for Postcard:", postcardID);
     document.querySelectorAll('.custom-marker').forEach(marker => {
-        marker.classList.remove('selected'); // ✅ Remove previous highlight
+        marker.classList.remove('selected');
         if (marker.dataset.id === postcardID) {
-            marker.classList.add('selected'); // ✅ Add highlight to active marker
+            marker.classList.add('selected');
         }
     });
 }
+// ✅ Function to Auto-Pan Map to Marker with Consistent Cluster View
+function panToMarker(postcard) {
+    const lat = parseFloat(postcard.lat);
+    const lon = parseFloat(postcard.lon);
+    console.log("Panning to:", lat, lon);
 
+    if (!isNaN(lat) && !isNaN(lon)) {
+        const marker = markers.getLayers().find(marker => marker.getLatLng().lat === lat && marker.getLatLng().lng === lon);
+
+        if (marker) {
+            // ✅ Directly show the marker without changing zoom level
+            markers.zoomToShowLayer(marker, () => {
+                map.setView(marker.getLatLng(), map.getZoom(), { animate: true });
+                marker.openPopup();
+                console.log("Marker shown without changing zoom.");
+                highlightMarker(postcard.postcardID); // ✅ Ensure highlight
+            });
+        } else {
+            console.warn("Marker not found in cluster. Panning directly.");
+            map.setView([lat, lon], map.getZoom(), { animate: true });
+            highlightMarker(postcard.postcardID); // ✅ Ensure highlight
+        }
+    } else {
+        console.error("Invalid coordinates for postcard (lat/lon):", postcard);
+    }
+}
+
+
+// ✅ Ensure Marker Remains Highlighted after Clustering Updates
+markers.on('animationend', () => {
+    if (selectedPostcardID) {
+        highlightMarker(selectedPostcardID);
+    }
+});
 
 const sidebarContent = document.getElementById('sidebar-content');
 sidebarContent.innerHTML = `<p>Loading postcards...</p>`;
 
-function updateSidebar(data) {
-    if (!data) {
-        // ✅ If no postcard is selected yet, show this message
-        document.getElementById('sidebar-content').innerHTML = `<p>Click on a marker in the map to view a postcard.</p>`;
-        return;
-    }
+// function updateSidebar(data) {
+//     if (!data) {
+//         // ✅ If no postcard is selected yet, show this message
+//         document.getElementById('sidebar-content').innerHTML = `<p>Click on a marker in the map to view a postcard.</p>`;
+//         return;
+//     }
 
-    const sidebarContent = document.getElementById('sidebar-content');
-    sidebarContent.innerHTML = `
-        <div class="postcard-container">
-            <img id="postcard-image" class="postcard-image" src="${data.imageFrontURL}" alt="Postcard Image">
-            ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
-        </div>
+//     const sidebarContent = document.getElementById('sidebar-content');
+//     sidebarContent.innerHTML = `
+//         <div class="postcard-container">
+//             <img id="postcard-image" class="postcard-image" src="${data.imageFrontURL}" alt="Postcard Image">
+//             ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
+//         </div>
 
-        <p><strong>From:</strong> <span id="postcard-name">${data.name}</span></p>
-        <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted}</span></p>
-        <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
+//         <p><strong>From:</strong> <span id="postcard-name">${data.name}</span></p>
+//         <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted}</span></p>
+//         <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
 
-        <div class="share-buttons">
-            <button id="copy-link" class="share-btn">Share</button>
-        </div>
-    `;
+//         <div class="share-buttons">
+//             <button id="copy-link" class="share-btn">Share</button>
+//         </div>
+//     `;
 
-    updateURL(data.postcardID);
-    highlightMarker(data.postcardID);
+//     updateURL(data.postcardID);
+//     highlightMarker(data.postcardID);
 
-    // ✅ Ensure Flip Button Works
-    const flipButton = document.getElementById('flip-button');
-    const postcardImage = document.getElementById('postcard-image');
+//     // ✅ Ensure Flip Button Works
+//     const flipButton = document.getElementById('flip-button');
+//     const postcardImage = document.getElementById('postcard-image');
 
-    if (flipButton && postcardImage) {
-        let showingFront = true;
-        flipButton.style.display = "block";
+//     if (flipButton && postcardImage) {
+//         let showingFront = true;
+//         flipButton.style.display = "block";
 
-        flipButton.addEventListener('click', function () {
-            showingFront = !showingFront;
-            postcardImage.src = showingFront ? data.imageFrontURL : data.imageBackURL;
-        });
-    }
+//         flipButton.addEventListener('click', function () {
+//             showingFront = !showingFront;
+//             postcardImage.src = showingFront ? data.imageFrontURL : data.imageBackURL;
+//         });
+//     }
 
-    // ✅ Copy Link Functionality
-    document.getElementById('copy-link').addEventListener('click', () => {
-        navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?id=${data.postcardID}`)
-            .then(() => alert("Link copied to clipboard!"))
-            .catch(err => console.error("Error copying to clipboard:", err));
-    });
-}
+//     // ✅ Copy Link Functionality
+//     document.getElementById('copy-link').addEventListener('click', () => {
+//         navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?id=${data.postcardID}`)
+//             .then(() => alert("Link copied to clipboard!"))
+//             .catch(err => console.error("Error copying to clipboard:", err));
+//     });
+// }
 
 
 
@@ -295,3 +509,215 @@ window.addEventListener('resize', () => {
 });
 
 
+
+
+
+
+
+// ✅ Sort State
+let sortOrder = "date-desc"; // Default: Newest First
+
+// ✅ Initialize Toolbar Event
+document.getElementById('sort-by').addEventListener('change', (event) => {
+    sortOrder = event.target.value;
+    sortPostcards();
+    populateGallery(); // Refresh the gallery after sorting
+});
+
+// ✅ Function to Sort Postcards
+function sortPostcards() {
+    postcards.sort((a, b) => {
+        if (sortOrder === "date-desc") {
+            return new Date(b.datePosted) - new Date(a.datePosted);
+        } else if (sortOrder === "date-asc") {
+            return new Date(a.datePosted) - new Date(b.datePosted);
+        } else if (sortOrder === "south-north-asc") {
+            return parseFloat(a.lat) - parseFloat(b.lat);
+        } else if (sortOrder === "south-north-desc") {
+            return parseFloat(b.lat) - parseFloat(a.lat);
+        } else if (sortOrder === "recent-asc") {
+            // ✅ Sort by ID (oldest first - ascending)
+            return parseInt(a.postcardID) - parseInt(b.postcardID);
+        } else if (sortOrder === "recent-desc") {
+            // ✅ Sort by ID (newest first - descending)
+            return parseInt(b.postcardID) - parseInt(a.postcardID);
+        }
+        return 0; // Default no sort
+    });
+}
+
+// ✅ Function to Populate Gallery with Sorting Logic
+function populateGallery() {
+    galleryView.innerHTML = '';
+
+    // ✅ Sort Postcards Based on Selected Option
+    const sortedPostcards = [...postcards];
+
+    // ✅ Populate Sorted Gallery
+    sortedPostcards.forEach(postcard => {
+        const card = document.createElement('div');
+        card.className = 'gallery-card';
+
+        const img = document.createElement('img');
+        img.src = showBacks ? getS3ImageURL(postcard.postcardID, 'B') : getS3ImageURL(postcard.postcardID, 'F');
+        img.alt = `Postcard from ${postcard.placePosted}`;
+        img.loading = 'lazy';
+
+        // ✅ Click event to load sidebar with postcard
+        card.addEventListener('click', function() {
+            selectedPostcardID = postcard.postcardID; // ✅ Track selected postcard
+            updateSidebar(postcard);
+            highlightMarker(postcard.postcardID); // ✅ Highlight on Map
+            highlightSelectedCard(); // ✅ Highlight in Gallery
+        });
+
+        card.appendChild(img);
+        galleryView.appendChild(card);
+    });
+}
+
+
+
+
+
+
+
+
+
+
+// ✅ Initialize "Next Card" Button
+document.getElementById("next-card").addEventListener("click", viewNextCard);
+document.getElementById("previous-card").addEventListener("click", viewPreviousCard);
+
+// ✅ Function to View Next Card Based on Current Sort Order
+function viewNextCard() {
+    if (!selectedPostcardID) {
+        console.warn("No postcard selected.");
+        return;
+    }
+
+    console.log("Currently selected postcard:", selectedPostcardID);
+
+    // ✅ Determine Current Sort Order
+    const sortType = document.getElementById("sort-by").value;
+    const sortedPostcards = [...postcards].sort((a, b) => {
+        if (sortType === "date-asc") return new Date(a.datePosted) - new Date(b.datePosted);
+        if (sortType === "date-desc") return new Date(b.datePosted) - new Date(a.datePosted);
+        if (sortType === "south-north-asc") return parseFloat(a.lat) - parseFloat(b.lat);
+        if (sortType === "south-north-desc") return parseFloat(b.lat) - parseFloat(a.lat);
+        if (sortType === "recent-asc") return parseInt(a.postcardID) - parseInt(b.postcardID);
+        if (sortType === "recent-desc") return parseInt(b.postcardID) - parseInt(a.postcardID);
+        return 0;
+    });
+
+    console.log("Sorted postcards for next card:", sortedPostcards);
+
+    // ✅ Find Index of Current Card
+    const currentIndex = sortedPostcards.findIndex(p => p.postcardID === selectedPostcardID);
+    if (currentIndex === -1) {
+        console.warn("Selected postcard not found in sorted list.");
+        return;
+    }
+
+    // ✅ Calculate Next Index (Wrap Around)
+    const nextIndex = (currentIndex + 1) % sortedPostcards.length;
+    const nextPostcard = sortedPostcards[nextIndex];
+    console.log("Next Card:", nextPostcard);
+
+    // ✅ Select the Next Postcard
+    selectPostcard(nextPostcard);
+}
+
+
+// ✅ Function to View Previous Card Based on Current Sort Order
+function viewPreviousCard() {
+    if (!selectedPostcardID) {
+        console.warn("No postcard selected.");
+        return;
+    }
+
+    console.log("Currently selected postcard:", selectedPostcardID);
+
+    // ✅ Determine Current Sort Order
+    const sortType = document.getElementById("sort-by").value;
+    const sortedPostcards = [...postcards].sort((a, b) => {
+        if (sortType === "date-asc") return new Date(a.datePosted) - new Date(b.datePosted);
+        if (sortType === "date-desc") return new Date(b.datePosted) - new Date(a.datePosted);
+        if (sortType === "south-north-asc") return parseFloat(a.lat) - parseFloat(b.lat);
+        if (sortType === "south-north-desc") return parseFloat(b.lat) - parseFloat(a.lat);
+        if (sortType === "recent-asc") return parseInt(a.postcardID) - parseInt(b.postcardID);
+        if (sortType === "recent-desc") return parseInt(b.postcardID) - parseInt(a.postcardID);
+        return 0;
+    });
+
+    console.log("Sorted postcards for previous card:", sortedPostcards);
+
+    // ✅ Find Index of Current Card
+    const currentIndex = sortedPostcards.findIndex(p => p.postcardID === selectedPostcardID);
+    if (currentIndex === -1) {
+        console.warn("Selected postcard not found in sorted list.");
+        return;
+    }
+
+    // ✅ Calculate Previous Index (Wrap Around)
+    const prevIndex = (currentIndex - 1 + sortedPostcards.length) % sortedPostcards.length;
+    const prevPostcard = sortedPostcards[prevIndex];
+    console.log("Previous Card:", prevPostcard);
+
+    // ✅ Select the Previous Postcard
+    selectPostcard(prevPostcard);
+}
+
+
+// ✅ Unified Select Postcard Function (Reusable)
+function selectPostcard(postcard) {
+    if (!postcard) {
+        console.warn("Invalid postcard selection.");
+        return;
+    }
+
+    selectedPostcardID = postcard.postcardID;
+    console.log("Selected Postcard:", selectedPostcardID);
+    
+    updateSidebar(postcard);
+    highlightMarker(postcard.postcardID);
+    highlightSelectedCard();
+    panToMarker(postcard);
+    updateURL(postcard.postcardID);
+}
+
+
+// ✅ Event Listener for Map Marker Click
+markers.on('click', function(event) {
+    const postcardID = event.target.options.id;
+    const selectedPostcard = postcards.find(p => p.postcardID === postcardID);
+    if (selectedPostcard) {
+        selectPostcard(selectedPostcard);
+    }
+});
+
+// ✅ Trigger Initial Selection (URL or Random)
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("Loading Initial Postcard...");
+    selectPostcardFromURL();
+});
+
+
+
+
+// ✅ Global Variable to Track Front/Back View
+let showBacks = false;
+
+// ✅ Initialize Toggle Button
+document.getElementById("toggle-view").addEventListener("click", togglePostcardView);
+
+// ✅ Function to Toggle Front/Back View
+function togglePostcardView() {
+    showBacks = !showBacks;
+    document.getElementById("toggle-view").textContent = showBacks ? "Show Fronts" : "Show Backs";
+    populateGallery(); // ✅ Refresh Gallery with New View
+    if (selectedPostcardID) {
+        const selectedPostcard = postcards.find(p => p.postcardID === selectedPostcardID);
+        if (selectedPostcard) updateSidebar(selectedPostcard); // ✅ Update Sidebar
+    }
+}

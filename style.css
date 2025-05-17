@@ -1,3 +1,101 @@
+/* 🔹 Toolbar (Centered Below Sidebar) */
+#toolbar {
+    position: absolute;
+    top: 50px; /* Same height as header */
+    left: 350px; /* Sidebar width on desktop */
+    right: 0;
+    height: 40px;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    z-index: 900; /* Lower than sidebar but above map/gallery */
+    border-bottom: 1px solid #ddd;
+    gap: 15px; /* Adds spacing between label and dropdown */
+    padding: 5px 15px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Adjusting for Mobile View */
+@media (max-width: 768px) {
+    #toolbar {
+        position: fixed;
+        justify-content: center;
+        top: 50px; /* Directly under the header */
+        left: 0;
+        width: 100%;
+        height: 35px;
+        padding: 5px 15px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        z-index: 900; /* Lower than sidebar but above map/gallery */
+    }
+}
+
+
+
+
+/* ✅ Sort Dropdown Styling with Custom Arrow */
+#sort-by {
+    font-size: 14px;
+    background-color: white;
+    color: rgb(0, 130, 134);
+    cursor: pointer;
+    padding: 5px 10px;
+    padding-right: 30px; /* ✅ Adds space for the arrow */
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgb(0, 130, 134);
+    border-radius: 5px;
+    transition: background 0.2s, transform 0.2s;
+    outline: none;
+    appearance: none;
+    /* text-align: center; */
+    min-width: 160px;
+    position: relative;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23008386" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpolyline points="6 9 12 15 18 9"%3E%3C/polyline%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    overflow: hidden;
+}
+
+/* ✅ Media Query: Small Mobile (1 Column) */
+@media (max-width: 1000px) {
+    #sort-by {
+        font-size: 12px !important;
+    }
+    
+}
+
+
+
+/* ✅ Hover and Focus Effects */
+#sort-by:hover, 
+#sort-by:focus {
+    background-color: rgba(0, 130, 134, 0.1);
+    outline: none;
+    border-color: rgb(0, 130, 134);
+}
+
+/* ✅ Style for the Dropdown Options */
+#sort-by option {
+    color: rgb(0, 130, 134);
+    background-color: white;
+}
+
+/* ✅ Optional - Remove default dropdown arrow for a cleaner look */
+#sort-by::-ms-expand {
+    display: none;
+}
+
+
+
+
+
+
 /* 🔹 General Reset */
 * {
     margin: 0;
@@ -104,6 +202,7 @@ html, body {
         border-right: none; /* ✅ Remove right border on mobile */
         border-top: 2px solid #008286; /* ✅ Add border to the top on mobile */
         transition: height 0.3s ease-in-out;
+        
     }
 
     /* 🔹 Expanded Sidebar (Mobile) */
@@ -125,17 +224,40 @@ html, body {
     cursor: pointer;
     color: #008286;
     transition: transform 0.2s ease, color 0.3s ease;
+    transform-origin: center; /* ✅ Ensures scaling happens from the center */
 }
 
-/* 🔹 Desktop: Right Edge, Centered Vertically */
+/* 🔹 Desktop: Right Edge, Perfectly Centered Vertically */
 @media (min-width: 769px) {
-    #toggle-sidebar {
+    #toggle-container {
+        display: flex;
+        align-items: center; /* Centers vertically */
+        justify-content: flex-end; /* Aligns to the right */
         position: absolute;
-        top: 50%;
-        right: 5px; /* Moves it outside sidebar */
-        transform: translateY(-50%);
+        top: 0;
+        right: 5px;
+        height: 100%;
+    }
+
+    #toggle-sidebar {
+        font-size: 22px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #008286;
+        transition: transform 0.2s ease, color 0.3s ease;
+        transform-origin: center; /* ✅ Scale from center */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #toggle-sidebar:hover {
+        transform: scale(1.5);
+        color: #e49a23e3; /* Optional: Darken color slightly on hover */
     }
 }
+
 
 /* 🔹 Mobile: **Sticky at Top of Sidebar** */
 @media (max-width: 768px) {
@@ -153,8 +275,10 @@ html, body {
     }
 
     #toggle-sidebar {
-        font-size: 24px;
+        font-size: 36px;
     }
+
+    
 }
 
 /* 🔹 Sidebar Content Styling */
@@ -200,6 +324,7 @@ html, body {
 
 .flip-btn:hover {
     background: rgba(0, 130, 134, 1);
+    transform: scale(1.05);
 }
 
 
@@ -291,5 +416,200 @@ html, body {
     background-color: #003c3f;
     transform: scale(0.95);
 }
+
+/* ✅ Base Gallery View Settings (Desktop by Default) */
+#gallery-view {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 15px;
+    overflow-y: auto;
+    max-width: 1400px;
+    margin: 90px auto 0; /* ✅ Added margin-top to push below header */
+    min-height: calc(100vh - 90px); /* ✅ Ensures full height for scrolling */
+    max-height: calc(100vh - 90px); /* ✅ Limits height to avoid overflow */
+    justify-content: center; /* ✅ Center all cards in the gallery */
+    align-content: flex-start; /* ✅ Ensures cards are aligned to the top and scrollable */
+    padding-bottom: 40px; /* ✅ Extra padding at the bottom for spacing */
+}
+
+
+/* ✅ Each Postcard with Consistent 5x7 Ratio */
+.gallery-card {
+    flex: 0 1 calc(20% - 15px); /* Default - 5 columns on desktop */
+    max-width: calc(20% - 15px);
+    aspect-ratio: 7 / 5;
+    background-color: #f0f0f0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    transition: transform 0.2s ease-in-out;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ✅ Image Fills the 5x7 Area without Stretching */
+.gallery-card img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+}
+
+/* ✅ Hover Effect for Interactivity */
+.gallery-card:hover {
+    transform: scale(1.02);
+}
+
+/* ✅ Media Query: Tablets (3 Columns) */
+@media (max-width: 1024px) {
+    #gallery-view {
+        flex-wrap: wrap;
+        justify-content: center;
+        height: calc(100vh - 60px); /* Adjust for header height */
+    }
+    .gallery-card {
+        flex: 0 1 calc(33.33% - 15px);
+        max-width: calc(33.33% - 15px);
+    }
+}
+
+/* ✅ Media Query: Mobile (2 Columns) */
+@media (max-width: 768px) {
+    #gallery-view {
+        flex-wrap: wrap;
+        justify-content: center;
+        height: calc(100vh - 70px); /* Adjust for header height */
+    }
+    .gallery-card {
+        flex: 0 1 calc(50% - 15px);
+        max-width: calc(50% - 15px);
+    }
+}
+
+/* ✅ Media Query: Small Mobile (1 Column) */
+@media (max-width: 480px) {
+    #gallery-view {
+        flex-wrap: wrap;
+        justify-content: center;
+        height: calc(100vh - 80px); /* Adjust for header height */
+    }
+    .gallery-card {
+        flex: 0 1 calc(50% - 15px);
+        max-width: calc(50% - 15px);
+    }
+}
+
+
+
+/* 🔹 Map/Gallery Toggle Button Styles (Matching Share Button) */
+#toggle-gallery {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 90%;  /* Matches share button width */
+    max-width: 150px; /* Matches share button max width */
+    margin: 10px auto; /* Centers the button */
+    padding: 10px 14px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #008286; /* Matches theme */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, transform 0.2s ease;
+}
+
+#toggle-gallery:hover {
+    background-color: #005d5f;
+    transform: scale(1.05);
+}
+
+#toggle-gallery:active {
+    background-color: #003c3f;
+    transform: scale(0.95);
+}
+
+/* 🔹 Highlighted Card Style (Currently Selected Card) */
+.gallery-card.selected {
+    outline: 3px solid #FFA500; /* Orange outline for emphasis */
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.5); /* Subtle glow effect */
+    transform: scale(1.05); /* Slightly larger to stand out */
+}
+
+
+
+
+
+
+
+
+
+/* ✅ Next Card Button Styling */
+/* ✅ Navigation Buttons Container (Flex Alignment) */
+.next-card-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+/* ✅ Navigation Button Styles (Matching Toggle View) */
+.next-card-btn {
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #008286;
+    background-color: white;
+    border: 1px solid #008286;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease;
+    text-align: center;
+    max-width: 100px;
+}
+
+/* ✅ Hover and Active Styles */
+.next-card-btn:hover {
+    background-color: #008286;
+    color: white;
+}
+
+.next-card-btn:active {
+    background-color: #005d5f;
+    transform: scale(0.95);
+}
+
+
+
+/* 🔹 Toolbar Button Styles */
+#toggle-view {
+    padding: 5px 10px;
+    font-size: 14px;
+    margin-left: 15px;
+    border: 1px solid #008286;
+    border-radius: 5px;
+    background-color: white;
+    color: #008286;
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+#toggle-view:hover {
+    background-color: #008286;
+    color: white;
+}
+
+/* ✅ Media Query: Small Mobile (1 Column) */
+@media (max-width: 1000px) {
+    #toggle-view {
+        font-size: 12px !important;
+    }
+    
+}
+
 
 

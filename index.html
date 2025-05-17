@@ -18,29 +18,51 @@
     <!-- Your custom CSS -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- PapaParse CSV Parser (For Google Sheets CSV Parsing) -->
+    <!-- PapaParse CSV Parser -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-    <!-- Header with Title -->
     <header class="site-header">
         <h1 class="site-title">TRAIL TRACES</h1>
+        <button id="toggle-gallery">View Gallery</button>
     </header>
 
+    <div id="toolbar" class="toolbar">
+        <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
+        <button id="toggle-view">Show Backs</button>
+        <select id="sort-by">
+            <option value="date-desc">Sort by: Creation Date (Newest First)</option>
+            <option value="date-asc">Sort by: Creation Date (Oldest First)</option>
+            <option value="recent-asc">Sort by: Upload Date (Oldest First)</option>
+            <option value="recent-desc">Sort by: Upload Date (Newest First)</option>
+            <option value="south-north-asc">Sort by: South to North</option>
+            <option value="south-north-desc">Sort by: North to South</option>
+        </select>
+    </div>
 
-    <!-- Full-Screen Map -->
     <div id="map"></div>
     
-    <!-- Sidebar Container -->
-    <div id="sidebar" class="sidebar">
-        <!-- ✅ Mobile Toggle Container (Sticky) -->
-        <div id="toggle-container">
-            <button id="toggle-sidebar" class="toggle-btn">▼</button>
-        </div>
-        <div id="sidebar-content">
-            <p>Select a marker on the map to view details here.</p>
+    
+    <div id="gallery-view" style="display: none;"></div>
 
-            <!-- Postcard Container (For Image + Flip Button) -->
+    <div id="sidebar" class="sidebar">
+        <!-- ✅ Toggle Container for Sidebar (Sticky) -->
+        <div id="toggle-container">
+            <button id="toggle-sidebar" class="toggle-btn">▶</button>
+        </div>
+
+
+        <!-- ✅ Next Card Button → -->
+        <div class="next-card-container">
+            <button id="previous-card" class="next-card-btn">←</button>
+            <button id="next-card" class="next-card-btn">→</button>
+        </div>
+
+
+        
+        <div id="sidebar-content">
+            <p>Select a marker or postcard to view details here.</p>
+
             <div class="postcard-container">
                 <img id="postcard-image" class="postcard-image" alt="Postcard Image">
                 <button id="flip-button" class="flip-btn" style="display: none;">⇆</button>
@@ -53,98 +75,36 @@
             <div class="share-buttons">
                 <button id="copy-link" class="share-btn">Share</button>
             </div>
+
+            
         </div>
 
-        <!-- About Section -->
+         
         <div id="about-container">
             <button id="toggle-about">About This Project ▼</button>
             <div id="about-content" class="hidden">
-                <p>
-                    <strong>Trail Traces</strong> collects postcards from those who walk, support, and are inspired by the Pacific Crest Trail. 
-                    It exists to preserve and share trail experiences—moments of challenge, joy, boredom, frustration, peace, connection—through handwritten notes.
-                </p><br>
-                <p>
-                    The postcards are mailed from places along the trail to a P.O. Box in Oregon, where they are then digitized and uploaded for the community to view, share, and remember. The project was started by Eden McCall, a 2025 northbound PCT thru-hiker, to create a place to share the trail experience with others. 
-                </p><br>
-                <p>
-                    <em>Trail Traces is an independent project and is not affiliated with, sponsored by, or endorsed by any organization, business, or institution.</em>
-                </p><br>
-                <p>
-                    Questions, ideas, or want to contribute? Send a message to:  
-                    <a href="mailto:edenmccall@gmail.com">edenmccall@gmail.com</a>
-                </p>
+                <p><strong>Trail Traces</strong> collects postcards from those who walk, support, and are inspired by the Pacific Crest Trail. It exists to preserve and share trail experiences—moments of challenge, joy, boredom, frustration, peace, connection—through handwritten notes.</p><br>
+                <p>The postcards are mailed from places along the trail to a P.O. Box in Oregon, where they are then digitized and uploaded for the community to view, share, and remember. The project was started by Eden McCall [trail name Bhikkhu], a 2025 northbound PCT thru-hiker, to create a place to share the trail experience with others.</p><br>
+                <p><em>Trail Traces is an independent project and is not affiliated with, sponsored by, or endorsed by any organization, business, or institution.</em></p><br>
+                <p><em>All postcard images are shared with permission from their creators and are intended for viewing only. Reproducing, downloading, or using these images without the creator's consent is prohibited.</em></p><br>
+                <p>Questions, ideas, or want to contribute? Send a message to: <a href="mailto:edenmccall@gmail.com">edenmccall@gmail.com</a></p>
             </div>
         </div>
     </div>
 
+    
+
+
+
+
+
+
+
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- Marker Cluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-
-    <!-- Your custom script.js -->
     <script src="script.js"></script>
-
-    <!-- Load the navigation dynamically -->
-    <script>
-      /*  async function loadNav() {
-            const response = await fetch("nav.html");
-            const navHTML = await response.text();
-
-            // Remove any existing nav before inserting new one
-            const existingNav = document.querySelector(".nav-container");
-            if (existingNav) existingNav.remove();
-
-            document.body.insertAdjacentHTML("afterbegin", navHTML);
-
-            // Enable dropdown functionality
-            document.querySelector(".nav-toggle").addEventListener("click", function () {
-                document.querySelector(".nav-menu").classList.toggle("show");
-            });
-
-            // Run Active Page Script After Nav is Loaded
-            const currentPage = window.location.pathname.split("/").pop();
-
-            // Map pages to their corresponding menu link ID
-            const pageMap = {
-                "index.html": "nav-map",
-                "gallery.html": "nav-gallery",
-                "about.html": "nav-about"
-            };
-
-            // Get the ID of the active link
-            const activeLinkId = pageMap[currentPage];
-
-            // If an active link exists, add the "active" class
-            if (activeLinkId) {
-                document.getElementById(activeLinkId).classList.add("active");
-            }
-        }
-
-        loadNav();*/
-
-        // Share Button Functionality
-        document.getElementById('shareBtn').addEventListener('click', function() {
-            // Get the current URL
-            const currentUrl = window.location.href;
-
-            // Create a temporary text input to copy the URL
-            const tempInput = document.createElement('input');
-            tempInput.value = currentUrl;
-            document.body.appendChild(tempInput);
-
-            // Select and copy the text to the clipboard
-            tempInput.select();
-            document.execCommand('copy');
-
-            // Remove the temporary input field
-            document.body.removeChild(tempInput);
-
-            // Alert the user that the URL is copied
-            alert('URL copied to clipboard!');
-        });
-    </script>
 
 </body>
 </html>
