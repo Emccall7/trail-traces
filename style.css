@@ -744,3 +744,37 @@ html, body {
     transform: scale(1.1);
 }
 
+
+
+
+
+/* 🔹 Mile Marker Label Style (Non-Interactive) */
+.mile-marker-text {
+    font-family: "Source Serif 4", serif;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0.5;
+    color: #008286;
+    pointer-events: none; /* ✅ Prevents interaction (no pointer cursor) */
+    user-select: none;    /* ✅ Prevents text selection */
+    text-shadow: 
+        -3px -3px 5px rgba(255, 255, 255, 0.8), 
+        3px -3px 5px rgba(255, 255, 255, 0.8),
+        -3px 3px 5px rgba(255, 255, 255, 0.8), 
+        3px 3px 5px rgba(255, 255, 255, 0.8);
+}
+
+/* 🔹 Mile Marker Dot (Matching Trail Style) */
+.mile-marker-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #008286; /* Matches PCT trail color */
+    border-radius: 50%; /* Circular dot */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; /* ✅ Not clickable */
+    z-index: 10; /* Ensure it stays above the trail line */
+    opacity: 0.0; /* NOT VISIBLE !!!!!! */
+}

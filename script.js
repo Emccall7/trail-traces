@@ -822,3 +822,82 @@ function rotatePostcard() {
     // ✅ Store the rotation value in a data attribute for persistence
     postcardImage.setAttribute("data-rotation", currentRotation);
 }
+
+
+
+
+
+
+
+
+// ✅ Function to Load and Display Mile Markers with Text Labels (Non-Interactable)
+let mileMarkersLayer; // Global variable for the marker layer
+
+function addMileMarkers() {
+    fetch('data/Full_PCT_Mile_Marker.geojson')
+        .then(response => response.json())
+        .then(data => {
+            mileMarkersLayer = L.geoJSON(data, {
+                pointToLayer: function(feature, latlng) {
+                    const marker = L.divIcon({
+                        className: 'mile-marker-label',
+                        html: `
+                            <div class="mile-marker-dot"></div>
+                            <span class="mile-marker-text">${Math.round(feature.properties.Mile)}</span>
+                        `,
+                        iconSize: [0, 0], // No icon background
+                    });
+
+                    return L.marker(latlng, { icon: marker, interactive: false }); // ✅ Non-interactive
+                }
+            }).addTo(map);
+
+            map.on("zoomstart", hideMileMarkers); // ✅ Hide markers on zoom start
+            map.on("zoomend", updateMileMarkers); // ✅ Show markers on zoom end
+            updateMileMarkers(); // ✅ Initial filter based on zoom
+        })
+        .catch(error => console.error("Error loading mile markers:", error));
+}
+
+// ✅ Function to Hide All Mile Markers During Zoom
+function hideMileMarkers() {
+    if (mileMarkersLayer) {
+        mileMarkersLayer.eachLayer(layer => {
+            layer.getElement().style.display = "none";
+        });
+    }
+}
+
+// ✅ Function to Filter Mile Markers Based on Zoom Level
+function updateMileMarkers() {
+    if (!mileMarkersLayer) return;
+
+    const currentZoom = map.getZoom();
+    console.log("Current Zoom Level:", currentZoom);
+
+    mileMarkersLayer.eachLayer(function(layer) {
+        const mile = layer.feature.properties.Mile;
+        let shouldShow = false;
+
+        if (currentZoom >= 14) {
+            shouldShow = Number.isInteger(mile); // ✅ Show only whole numbers at high zoom
+        } else if (currentZoom >= 12) {
+            shouldShow = mile % 5 === 0;
+        } else if (currentZoom >= 11) {
+            shouldShow = mile % 10 === 0;
+        } else if (currentZoom >= 9) {
+            shouldShow = mile % 50 === 0;
+        } else if (currentZoom >= 7) {
+            shouldShow = mile % 100 === 0;
+        } else if (currentZoom >= 5) {
+            shouldShow = mile % 500 === 0;
+        } else {
+            shouldShow = false; // Hide all at very low zoom
+        }
+
+        layer.getElement().style.display = shouldShow ? "block" : "none";
+    });
+}
+
+// ✅ Call the function to load mile markers when the map is initialized
+addMileMarkers();

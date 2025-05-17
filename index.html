@@ -34,6 +34,21 @@
   gtag('config', 'G-BLWTLNG5NY');
 </script>
 
+<script>
+    document.querySelectorAll('.social-links a').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const platform = this.href.includes('instagram') ? 'Instagram' : 'Facebook';
+            gtag('event', 'click', {
+                'event_category': 'Social Media',
+                'event_label': platform,
+                'value': 1
+            });
+            console.log(`Clicked ${platform} Link`);
+        });
+    });
+</script>
+
+
 <body>
     <header class="site-header">
         <h1 class="site-title">TRAIL TRACES</h1>
@@ -104,13 +119,15 @@
                     <img src="images/instagram-icon.png" alt="Instagram" class="social-icon">
                 </a>
             </div>
-            
+
             <button id="toggle-about">About This Project ▼</button>
             <div id="about-content" class="hidden">
                 <p><strong>Trail Traces</strong> collects postcards from those who walk, support, and are inspired by the Pacific Crest Trail. It exists to preserve and share trail experiences—moments of challenge, joy, boredom, frustration, peace, connection—through handwritten notes.</p><br>
                 <p>The postcards are mailed to a P.O. Box in Oregon, where they are then digitized and uploaded for the community to view, share, and remember. The project was started by Eden McCall [trail name Bhikkhu], a 2025 northbound PCT thru-hiker, to create a place to share the trail experience with others.</p><br>
                 <p style="font-size: 11px;"><em>Trail Traces is an independent project and is not affiliated with, sponsored by, or endorsed by any organization, business, or institution.</em></p><br>
+                <p style="font-size: 11px;"><em>PCT map data sourced from the Pacific Crest Trail Association. Elevation profile graphic adapted from a design in </em>The Pacific Crest Trail: A Visual Compendium<em> by Josh Powell.</em></p><br>
                 <p style="font-size: 11px;"><em>All postcard images are shared with permission from their creators and are intended for viewing only. Reproducing, downloading, or using these images without consent is a violation of the creators' rights.</em></p><br>
+
                 <p>Questions, ideas, or want to contribute? Send a message to: <a href="mailto:edenmccall@gmail.com">edenmccall@gmail.com</a></p>
             </div>
         </div>
