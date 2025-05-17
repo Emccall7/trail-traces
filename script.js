@@ -94,6 +94,7 @@ async function updateSidebar(data) {
         <div class="postcard-container">
             <img id="postcard-image" class="postcard-image" src="${showBacks ? await getS3ImageURL(data.postcardID, 'B') : await getS3ImageURL(data.postcardID, 'F')}" alt="Postcard Image">
             ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
+            <button id="rotate-button" class="rotate-btn">↻</button>
         </div>
 
         <p><strong>From:</strong> <span id="postcard-name">${data.name}</span></p>
@@ -103,7 +104,13 @@ async function updateSidebar(data) {
         <div class="share-buttons">
             <button id="copy-link" class="share-btn">Share</button>
         </div>
+
+        
     `;
+
+    // ✅ Attach Flip and Rotate Button Functionality
+        const rotateButton = document.getElementById("rotate-button");
+        rotateButton.addEventListener("click", rotatePostcard);
 
     // ✅ Flip Button Logic
     const flipButton = document.getElementById('flip-button');
@@ -735,4 +742,83 @@ function togglePostcardView() {
         const selectedPostcard = postcards.find(p => p.postcardID === selectedPostcardID);
         if (selectedPostcard) updateSidebar(selectedPostcard); // ✅ Update Sidebar
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ✅ Function to Rotate the Postcard
+function rotatePostcard() {
+    const postcardImage = document.getElementById("postcard-image");
+    if (!postcardImage) {
+        console.warn("No postcard image found.");
+        return;
+    }
+
+    console.log("Rotating Postcard");
+
+    // ✅ Get current rotation value (or set to 0 if not set)
+    let currentRotation = parseFloat(postcardImage.getAttribute("data-rotation") || 0);
+    
+    // ✅ Increment rotation by 90 degrees
+    currentRotation = (currentRotation + 90) % 360;
+
+    // ✅ Apply rotation using CSS transform
+    postcardImage.style.transform = `rotate(${currentRotation}deg)`;
+    postcardImage.style.transition = "transform 0.3s ease-in-out"; // Smooth transition
+
+    // ✅ Store the rotation value in a data attribute for persistence
+    postcardImage.setAttribute("data-rotation", currentRotation);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ✅ Function to Rotate the Postcard
+function rotatePostcard() {
+    const postcardContainer = document.querySelector(".postcard-container");
+    const postcardImage = document.getElementById("postcard-image");
+    if (!postcardImage || !postcardContainer) {
+        console.warn("No postcard image or container found.");
+        return;
+    }
+
+    console.log("Rotating Postcard");
+
+    // ✅ Get current rotation value (or set to 0 if not set)
+    let currentRotation = parseFloat(postcardImage.getAttribute("data-rotation") || 0);
+    
+    // ✅ Increment rotation by 90 degrees
+    currentRotation = (currentRotation + 90) % 360;
+    postcardImage.style.transform = `rotate(${currentRotation}deg)`;
+    postcardImage.style.transition = "transform 0.3s ease-in-out"; // Smooth transition
+
+    // ✅ Toggle container class for vertical/horizontal
+    if (currentRotation === 90 || currentRotation === 270) {
+        postcardContainer.classList.add("rotated");
+    } else {
+        postcardContainer.classList.remove("rotated");
+    }
+
+    // ✅ Store the rotation value in a data attribute for persistence
+    postcardImage.setAttribute("data-rotation", currentRotation);
 }

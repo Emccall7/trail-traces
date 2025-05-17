@@ -180,13 +180,29 @@ html, body {
 }
 
 
+
+
+/* ✅ Hide Scrollbar in Sidebar but Keep Scrollable */
+.sidebar {
+    overflow-y: auto; /* Allow vertical scrolling */
+    scrollbar-width: none; /* For Firefox */
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+}
+
+/* ✅ Hide Scrollbar for WebKit Browsers (Chrome, Safari) */
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+
+
 /* 🔹 Expanded Sidebar (Desktop) */
 .sidebar.expanded {
-    width: 75vw; /* 75% width on desktop */
+    width:80vw; /* 75% width on desktop */
 }
 
 .sidebar.expanded + #map {
-    left: 75vw; /* Adjust map position */
+    left: 80vw; /* Adjust map position */
 }
 
 /* 🔹 Sidebar (Mobile) - **Fixed to Bottom** */
@@ -290,51 +306,126 @@ html, body {
     padding: 15px;
 }
 
+
+
+
+/* ✅ Flexible Postcard Container (7x7) */
 .postcard-container {
     position: relative;
-    max-height: 80vh; /* ✅ Ensures it never exceeds 80% of the viewport height */
-    overflow: hidden; /* ✅ Prevents it from growing beyond this */
+    width: 100%;
+    max-width: 800px; /* Adjust for your desired max size */
+    aspect-ratio: 7 / 7; /* Perfect square */
+    overflow: hidden;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+    transition: height 0.3s ease, width 0.3s ease;
+    margin-bottom: 15px; /* Ensures space for buttons below */
 }
 
+/* ✅ Adjusting for Rotated Postcard */
+.postcard-container.rotated {
+    aspect-ratio: 7 / 7; /* Switches to vertical ratio */
+    height: auto;
+}
+
+/* ✅ Postcard Image (Rotates within Fixed Container) */
 .postcard-image {
-    max-width: 100%;  /* ✅ Ensures the image scales correctly */
-    max-height: 75vh; /* ✅ Prevents the image from taking more than 75vh */
-    object-fit: contain; /* ✅ Ensures full image visibility without stretching */
+    max-width: 100%;
+    max-height: 100%;
+    transition: transform 0.3s ease-in-out;
+    object-fit: contain;
 }
 
-/* ✅ Flip button stays aligned to the bottom right */
-.flip-btn {
+/* ✅ Next Card Container Positioned Below Postcard */
+.next-card-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+/* ✅ Mobile Responsive Fix */
+@media (max-width: 768px) {
+    .postcard-container {
+        padding-top: 50px;
+        width: calc(90vw - 20px);
+        aspect-ratio: 7 / 7;
+        /* margin-bottom: 50px; */
+    }
+
+    .postcard-container.rotated {
+        padding-top: 50px;
+        aspect-ratio: 7 / 7;
+        height: auto;
+    }
+
+    .next-card-container {
+        position: relative;
+        /* margin-top: 15px; */
+    }
+}
+
+
+
+
+/* ✅ Flip and Rotate Buttons (Side-by-Side by Default) */
+.flip-btn,
+.rotate-btn {
     position: absolute;
     bottom: 10px;
     right: 10px;
     background: rgba(0, 130, 134, 0.8);
     border: none;
     color: white;
-    font-size: 20px;
+    font-size: 16px;
     padding: 6px 10px;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.3s ease-in-out;
+    transition: background 0.3s ease-in-out, transform 0.2s;
 }
 
+/* ✅ Positioning the Rotate Button Left of the Flip Button */
+.rotate-btn {
+    right: 70px; /* Adjust this value for spacing */
+}
 
-.flip-btn:hover {
+/* ✅ Hover Effects for Both Buttons */
+.flip-btn:hover,
+.rotate-btn:hover {
     background: rgba(0, 130, 134, 1);
     transform: scale(1.05);
 }
 
+/* ✅ Mobile Adjustment: Stacked Buttons */
+@media (max-width: 768px) {
+    .flip-btn,
+    .rotate-btn {
+        position: relative;
+        right: 0;
+        bottom: 0;
+        display: inline-block;
+        margin: 5px 5px 0 0; /* Slight gap between them */
+    }
+
+    .postcard-container {
+        flex-direction: row; /* Side by side in mobile */
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+}
 
 
-/* 🔹 About Section */
+/* 🔹 About Section - Centered */
 #about-container {
     margin-top: 20px;
+    max-width: 600px; /* Center within this width */
     padding: 10px;
     border-top: 2px solid #008286;
     text-align: center;
+    margin-left: auto;
+    margin-right: auto; /* Centers the section */
 }
 
 #toggle-about {
@@ -433,6 +524,23 @@ html, body {
     padding-bottom: 40px; /* ✅ Extra padding at the bottom for spacing */
 }
 
+/* ✅ Adjusting Gallery for Desktop (Right-Aligned) */
+@media (min-width: 1024px) {
+    #gallery-view {
+        justify-content: flex-end; /* ✅ Aligns the gallery to the right */
+        margin-left: 350px; /* ✅ Adjust based on the sidebar width */
+        max-width: calc(100vw-350px);
+    }
+}
+
+
+/* ✅ Mobile View: Centered Gallery */
+@media (max-width: 1024px) {
+    #gallery-view {
+        margin: 0 auto; /* Centered */
+        justify-content: center;
+    }
+}
 
 /* ✅ Each Postcard with Consistent 5x7 Ratio */
 .gallery-card {
@@ -613,4 +721,26 @@ html, body {
 }
 
 
+
+
+
+/* ✅ Social Media Icons Centered */
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px; /* Adds spacing below icons */
+}
+
+.social-icon {
+    width: 30px;
+    height: 30px;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+/* ✅ Hover Effect */
+.social-icon:hover {
+    transform: scale(1.1);
+}
 
