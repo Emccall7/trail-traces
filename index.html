@@ -21,6 +21,17 @@
     <!-- PapaParse CSV Parser -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BLWTLNG5NY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-BLWTLNG5NY');
+</script>
+
 <body>
     <header class="site-header">
         <h1 class="site-title">TRAIL TRACES</h1>
@@ -31,10 +42,10 @@
         <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
         <button id="toggle-view">Show Backs</button>
         <select id="sort-by">
-            <option value="date-desc">Sort by: Creation Date (Newest First)</option>
-            <option value="date-asc">Sort by: Creation Date (Oldest First)</option>
-            <option value="recent-asc">Sort by: Upload Date (Oldest First)</option>
-            <option value="recent-desc">Sort by: Upload Date (Newest First)</option>
+            <option value="date-desc">Sort by: Creation Date (New First)</option>
+            <option value="date-asc">Sort by: Creation Date (Old First)</option>
+            <option value="recent-asc">Sort by: Upload Date (Old First)</option>
+            <option value="recent-desc">Sort by: Upload Date (New First)</option>
             <option value="south-north-asc">Sort by: South to North</option>
             <option value="south-north-desc">Sort by: North to South</option>
         </select>

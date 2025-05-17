@@ -65,7 +65,7 @@
 /* ✅ Media Query: Small Mobile (1 Column) */
 @media (max-width: 1000px) {
     #sort-by {
-        font-size: 12px !important;
+        font-size: 11px !important;
     }
     
 }
@@ -481,6 +481,7 @@ html, body {
         flex-wrap: wrap;
         justify-content: center;
         height: calc(100vh - 70px); /* Adjust for header height */
+        padding-bottom: 250px; /* ✅ Extra padding at the bottom for spacing */
     }
     .gallery-card {
         flex: 0 1 calc(50% - 15px);
@@ -606,7 +607,7 @@ html, body {
 /* ✅ Media Query: Small Mobile (1 Column) */
 @media (max-width: 1000px) {
     #toggle-view {
-        font-size: 12px !important;
+        font-size: 11px !important;
     }
     
 }
