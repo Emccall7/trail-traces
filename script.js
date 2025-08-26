@@ -174,7 +174,7 @@ const map = L.map('map', {
     maxBounds: pctBounds,  // Restrict panning
     maxBoundsViscosity: 0.8, // Adds resistance when nearing boundaries
     zoomControl: false
-}).setView([41.5, -120], 6);
+}).setView([42, -120], 5);
 
 // ✅ Optional: Prevent "bouncing" when hitting the edges
 map.options.worldCopyJump = false;
@@ -217,7 +217,8 @@ const hillshadeLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/
 const S3_BASE_URL = "https://trail-traces-images.s3.us-east-2.amazonaws.com/";
 
 // ✅ Google Sheets CSV URL
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQx9Mem_WIOPZzLB0kdWXEiHNH1PYJGFMr-vjGWEDOFUG4nDApkazyXjgzsplriSvT4UemacswhvDrD/pub?output=csv";
+const sheetURL = "https://docs.google.com/spreadsheets/d/1-AHY6y5Sv9k02kV7dOcxbyZrt-d1dMBhlMlYCEA5gH4/export?format=csv&gid=0";
+
 
 // ✅ Track active marker
 let activeMarker = null;
@@ -363,23 +364,21 @@ fetch(sheetURL)
     })
     .catch(error => console.error("Error loading postcard data:", error));
 
-// ✅ Trigger Initial Selection (URL or Random)
-function selectPostcardFromURL() {
+// ✅ Function to Select Postcard from URL with Initial Load Flag
+function selectPostcardFromURL(initialLoad = false) {
     const params = new URLSearchParams(window.location.search);
     const postcardID = params.get("id");
 
     if (postcardID) {
-        // ✅ If a postcard is already selected in the URL, load it
         const selectedPostcard = postcards.find(p => p.postcardID === postcardID);
         if (selectedPostcard) {
-            selectPostcard(selectedPostcard);
+            selectPostcard(selectedPostcard, initialLoad);
         } else {
             console.warn("Postcard ID in URL not found. Selecting random postcard.");
-            selectRandomPostcard();
+            selectRandomPostcard(initialLoad);
         }
     } else {
-        // ✅ If no postcard is in the URL, select a random one
-        selectRandomPostcard();
+        selectRandomPostcard(initialLoad);
     }
 }
 
@@ -408,8 +407,7 @@ function highlightMarker(postcardID) {
     });
 }
 
-
-// ✅ Function to Auto-Pan Map to Marker with Consistent Cluster View
+// ✅ Function to Auto-Pan Map to Marker with Smooth FlyTo and Cluster Handling
 function panToMarker(postcard) {
     const lat = parseFloat(postcard.lat);
     const lon = parseFloat(postcard.lon);
@@ -419,27 +417,38 @@ function panToMarker(postcard) {
         const marker = markers.getLayers().find(marker => marker.getLatLng().lat === lat && marker.getLatLng().lng === lon);
 
         if (marker) {
-            if (initialLoad) {
-                // ✅ On initial load, pan to the marker without zooming in
-                console.log("Initial load - panning without zooming.");
-                map.setView(marker.getLatLng(), 8, { animate: true });
-            } else {
-                // ✅ For subsequent selections, use zoom-to-cluster behavior
-                markers.zoomToShowLayer(marker, () => {
-                    map.setView(marker.getLatLng(), map.getZoom(), { animate: true });
-                    marker.openPopup();
-                    console.log("Marker shown without changing zoom.");
-                    highlightMarker(postcard.postcardID);
-                });
+            const targetLatLng = marker.getLatLng();
+
+            // ✅ Check if the marker is already in view
+            if (map.getBounds().contains(targetLatLng)) {
+                console.log("Marker is already in view. Highlighting.");
+                highlightMarker(postcard.postcardID);
+                marker.openPopup();
+                return;
             }
 
-            // ✅ Mark that the first load has completed
-            initialLoad = false;
+            // ✅ Ensure the marker is visible and pan to it smoothly
+            markers.zoomToShowLayer(marker, () => {
+                map.flyTo(targetLatLng, map.getZoom(), {
+                    animate: true,
+                    duration: 1.5, // Smooth and quick
+                    easeLinearity: 0.25
+                });
+
+                setTimeout(() => {
+                    highlightMarker(postcard.postcardID);
+                    marker.openPopup();
+                    console.log("Marker shown and highlighted.");
+                }, 500); // Small delay for animation
+            });
         } else {
             console.warn("Marker not found in cluster. Panning directly.");
-            map.setView([lat, lon], initialLoad ? 8 : map.getZoom(), { animate: true });
+            map.flyTo([lat, lon], map.getZoom(), {
+                animate: true,
+                duration: 1.5,
+                easeLinearity: 0.25
+            });
             highlightMarker(postcard.postcardID);
-            initialLoad = false;
         }
     } else {
         console.error("Invalid coordinates for postcard (lat/lon):", postcard);
@@ -721,7 +730,7 @@ function viewPreviousCard() {
 
 
 // ✅ Unified Select Postcard Function (Reusable)
-function selectPostcard(postcard) {
+function selectPostcard(postcard, initialLoad = false) {
     if (!postcard) {
         console.warn("Invalid postcard selection.");
         return;
@@ -731,9 +740,9 @@ function selectPostcard(postcard) {
     console.log("Selected Postcard:", selectedPostcardID);
     
     updateSidebar(postcard);
-    highlightMarker(postcard.postcardID);
+    highlightMarker(postcard.postcardID); // ✅ Ensure highlight immediately
     highlightSelectedCard();
-    panToMarker(postcard);
+    panToMarker(postcard, initialLoad); // ✅ Use smooth flyTo for both initial load and navigation
     updateURL(postcard.postcardID);
 }
 
