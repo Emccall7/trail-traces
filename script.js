@@ -83,74 +83,103 @@ function highlightSelectedCard() {
     }
 }
 
+
 // ✅ Updating the sidebar function to use async for the image
-async function updateSidebar(data) {
-    if (!data) {
-        document.getElementById('sidebar-content').innerHTML = `<p>Select a marker or postcard to view details here.</p>`;
-        return;
+async function updateSidebar(data, { forceReveal = false } = {}) {
+  if (!data) {
+    document.getElementById('sidebar-content').innerHTML =
+      `<p>Select a marker or postcard to view details here.</p>`;
+    return;
+  }
+
+  // GATE: if mature and not opted-in and not forced
+if (data.isMature && !showMature && !forceReveal) {
+  const sidebarContent = document.getElementById('sidebar-content');
+  const imgURL = showBacks
+    ? (data.imageBackURL || getS3ImageURL(data.postcardID, 'B'))
+    : (data.imageFrontURL || getS3ImageURL(data.postcardID, 'F'));
+
+  sidebarContent.innerHTML = `
+    <div class="gate">
+      <div class="gate-hero">
+        <img class="gate-image blurred" src="${imgURL}" alt="Mature postcard preview (blurred)">
+      </div>
+      <p>This postcard is marked as <strong>18+ Mature</strong>. It may contain profanity, sexual themes, explicit language, or other adult material.</p>
+      <div class="gate-actions">
+        <button id="reveal-this" type="button">Continue to view</button>
+      </div>
+    </div>
+  `;
+
+  // Only the button reveals (no click on image/hero)
+  document.getElementById('reveal-this').addEventListener('click', () => {
+    updateSidebar(data, { forceReveal: true });
+    if (typeof gtag === "function") {
+      gtag('event', 'mature_reveal_sidebar_once', { event_category: 'Filter' });
     }
+  });
 
-    // ✅ Check if Anonymous field is marked as 'Y'
-    const displayName = data.anonymous === 'Y' ? 'Anonymous' : data.name;
-    console.log(`Sidebar - Postcard ${data.postcardID} Name: ${displayName} (Anonymous: ${data.anonymous})`);
-
-
-    const sidebarContent = document.getElementById('sidebar-content');
-    sidebarContent.innerHTML = `
-        <div class="postcard-container">
-            <img id="postcard-image" class="postcard-image" src="${showBacks ? await getS3ImageURL(data.postcardID, 'B') : await getS3ImageURL(data.postcardID, 'F')}" alt="Postcard Image">
-            ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
-            <button id="rotate-button" class="rotate-btn">↻</button>
-        </div>
-
-        <p><strong>From:</strong> <span id="postcard-name">${displayName}</span></p>
-        <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted}</span></p>
-        <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
-
-        <div class="share-buttons">
-            <button id="copy-link" class="share-btn">Share</button>
-        </div>
-
-        
-    `;
-
-    // ✅ Attach Flip and Rotate Button Functionality
-        const rotateButton = document.getElementById("rotate-button");
-        rotateButton.addEventListener("click", rotatePostcard);
-
-    // ✅ Flip Button Logic
-    const flipButton = document.getElementById('flip-button');
-    const postcardImage = document.getElementById('postcard-image');
-
-    if (flipButton && postcardImage && data.imageBackURL) {
-        let showingFront = true;
-        flipButton.style.display = "block";
-
-        flipButton.addEventListener('click', function () {
-            showingFront = !showingFront;
-            postcardImage.src = showingFront ? data.imageFrontURL : data.imageBackURL;
-        });
-    }
-
-    // ✅ Copy Link Functionality
-    const copyButton = document.getElementById('copy-link');
-    copyButton.addEventListener('click', () => {
-        const link = `${window.location.origin}${window.location.pathname}?id=${data.postcardID}`;
-        navigator.clipboard.writeText(link)
-            .then(() => {
-                alert("Link copied to clipboard!");
-                // ✅ Google Analytics Event Tracking
-                gtag('event', 'share_link', {
-                    'event_category': 'Interaction',
-                    'event_label': 'Copied Link'
-                });
-            })
-            .catch(err => console.error("Error copying link: ", err));
-    });
-
-     // ✅ Update the URL when loading the sidebar
-     updateURL(data.postcardID);
+  return; // stop here; user must choose
 }
+
+
+  // 👇 Normal (non-gated) sidebar render
+  const displayName = data.anonymous === 'Y' ? 'Anonymous' : data.name;
+  const sc = document.getElementById('sidebar-content');
+  sc.innerHTML = `
+    <div class="postcard-container">
+      <img id="postcard-image" class="postcard-image"
+           src="${showBacks ? (data.imageBackURL || getS3ImageURL(data.postcardID,'B'))
+                             : (data.imageFrontURL || getS3ImageURL(data.postcardID,'F'))}"
+           alt="Postcard Image">
+      ${data.imageBackURL ? `<button id="flip-button" class="flip-btn">⇆</button>` : ""}
+      <button id="rotate-button" class="rotate-btn">↻</button>
+    </div>
+
+    <p><strong>From:</strong> <span id="postcard-name">${displayName}</span></p>
+    <p><strong>Location:</strong> <span id="postcard-location">${data.placePosted || 'Not Available'}</span></p>
+    <p><strong>Date:</strong> <span id="postcard-date">${data.datePosted}</span></p>
+
+    <div class="share-buttons">
+      <button id="copy-link" class="share-btn">Share</button>
+    </div>
+  `;
+
+  // handlers
+  const rotateButton = document.getElementById("rotate-button");
+  if (rotateButton) rotateButton.addEventListener("click", rotatePostcard);
+
+  const flipButton = document.getElementById('flip-button');
+  const postcardImage = document.getElementById('postcard-image');
+  if (flipButton && postcardImage && data.imageBackURL) {
+    let showingFront = !showBacks;
+    flipButton.style.display = "block";
+    flipButton.addEventListener('click', function () {
+      showingFront = !showingFront;
+      postcardImage.src = showingFront
+        ? (data.imageFrontURL || getS3ImageURL(data.postcardID,'F'))
+        : (data.imageBackURL  || getS3ImageURL(data.postcardID,'B'));
+    });
+  }
+
+  const copyButton = document.getElementById('copy-link');
+  if (copyButton) {
+    copyButton.addEventListener('click', () => {
+      const link = `${window.location.origin}${window.location.pathname}?id=${data.postcardID}`;
+      navigator.clipboard.writeText(link)
+        .then(() => {
+          alert("Link copied to clipboard!");
+          if (typeof gtag === "function") {
+            gtag('event', 'share_link', { event_category: 'Interaction', event_label: 'Copied Link' });
+          }
+        })
+        .catch(err => console.error("Error copying link: ", err));
+    });
+  }
+
+  updateURL(data.postcardID);
+}
+
 
 
 
@@ -278,36 +307,28 @@ fetch(sheetURL)
         const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
 
         parsed.data.forEach(row => {
-            const lat = parseFloat(row["Latitude"]);
-            const lon = parseFloat(row["Longitude"]);
-            const postcardID = row["postcardID"]?.trim();
+            const rawLat = row["Latitude"];
+            const rawLon = row["Longitude"];
+            const lat = Number.isFinite(parseFloat(rawLat)) ? parseFloat(rawLat) : null;
+            const lon = Number.isFinite(parseFloat(rawLon)) ? parseFloat(rawLon) : null;
+            const isMature = (row["Mature"]?.trim()?.toUpperCase() === "Y");
 
-            if (isNaN(lat) || isNaN(lon)) {
-                console.warn(`Skipping invalid postcard ${postcardID} due to missing coordinates.`);
+
+            const postcardID = row["postcardID"]?.trim();
+            if (!postcardID) {
+                console.warn("Skipping row with no postcardID");
                 return;
             }
 
-            const placePosted = row["PlacePosted"]?.trim() || "Unknown Location";
+            const placePosted = row["PlacePosted"]?.trim() || "Not Available"; // ← requested label
             const datePosted = row["DatePosted"]?.trim() || "Unknown Date";
-            let imageFrontURL = getS3ImageURL(postcardID, "F");
-            let imageBackURL = getS3ImageURL(postcardID, "B");
             const name = row["Name"]?.trim() || "Unknown";
-            const anonymous = row["Anonymous"]?.trim() || "N"; // ✅ Read 'Anonymous' field
+            const anonymous = row["Anonymous"]?.trim() || "N";
 
-            console.log(`Loading Postcard ${postcardID} - Anonymous: ${anonymous}`);
+            const imageFrontURL = getS3ImageURL(postcardID, "F");
+            const imageBackURL  = getS3ImageURL(postcardID, "B");
 
-            console.log(`Adding marker: ${postcardID} at (${lat}, ${lon})`);
-
-            // ✅ Create Marker
-            const marker = L.marker([lat, lon], {
-                icon: L.divIcon({
-                    html: `<div class="custom-marker" data-id="${postcardID}"></div>`,
-                    className: 'custom-marker-container',
-                    iconSize: [15, 15]
-                })
-            });
-
-            // ✅ Store Postcard Data (including lat/lon)
+            // Store it regardless of coords
             const postcardData = {
                 postcardID,
                 placePosted,
@@ -315,24 +336,49 @@ fetch(sheetURL)
                 imageFrontURL,
                 imageBackURL,
                 name,
-                anonymous, 
-                lat, // ✅ Storing lat/lon directly in the postcard object
-                lon
+                anonymous,
+                lat,
+                lon,
+                hasCoords: Number.isFinite(lat) && Number.isFinite(lon),
+                isMature               
             };
+
             postcards.push(postcardData);
 
-            // ✅ Marker Click Function
-            marker.on('click', function () {
-                updateSidebar(postcardData);
-                highlightMarker(postcardID);
-                selectedPostcardID = postcardID;
-                console.log("Selected Postcard (Map Click):", selectedPostcardID);
-            });
+            // Only create a map marker if we have coords
+            if (postcardData.hasCoords) {
+                const marker = L.marker([lat, lon], {
+                    icon: L.divIcon({
+                        html: `<div class="custom-marker" data-id="${postcardID}"></div>`,
+                        className: 'custom-marker-container',
+                        iconSize: [15, 15]
+                    })
+                });
 
-            markers.addLayer(marker);
-            sortPostcards(); // ✅ Ensure postcards are sorted immediately
-            
+                marker.options.isMature = isMature;   // <-- this is the line you asked about
+
+                marker.on('click', function () {
+                    updateSidebar(postcardData);
+                    highlightMarker(postcardID);
+                    selectedPostcardID = postcardID;
+                });
+
+                markers.addLayer(marker);
+            } else {
+                console.warn(`No coordinates for postcard ${postcardID}; added to gallery only.`);
+            }
         });
+
+
+
+        // sort immediately after loading
+        sortPostcards();
+
+        // ensure URL selection happens after loading
+        setTimeout(() => {
+            selectPostcardFromURL();
+        }, 500);
+
 
         // ✅ Function to Sort Postcards (Used Immediately After Loading)
         function sortPostcards() {
@@ -398,7 +444,7 @@ function selectRandomPostcard() {
 
 // ✅ Function to Highlight Active Marker
 function highlightMarker(postcardID) {
-    console.log("Highlighting Marker for Postcard:", postcardID);
+    if (!postcardID) return;
     document.querySelectorAll('.custom-marker').forEach(marker => {
         marker.classList.remove('selected');
         if (marker.dataset.id === postcardID) {
@@ -407,53 +453,54 @@ function highlightMarker(postcardID) {
     });
 }
 
+
 // ✅ Function to Auto-Pan Map to Marker with Smooth FlyTo and Cluster Handling
 function panToMarker(postcard) {
-    const lat = parseFloat(postcard.lat);
-    const lon = parseFloat(postcard.lon);
-    console.log("Panning to:", lat, lon);
+    if (!postcard || !Number.isFinite(postcard.lat) || !Number.isFinite(postcard.lon)) {
+        console.log("Postcard has no coordinates; skipping pan.");
+        // Still highlight selected (gallery highlight) but no map movement
+        highlightMarker(postcard?.postcardID);
+        return;
+    }
 
-    if (!isNaN(lat) && !isNaN(lon)) {
-        const marker = markers.getLayers().find(marker => marker.getLatLng().lat === lat && marker.getLatLng().lng === lon);
+    const lat = postcard.lat;
+    const lon = postcard.lon;
 
-        if (marker) {
-            const targetLatLng = marker.getLatLng();
+    const marker = markers.getLayers().find(m =>
+        m.getLatLng().lat === lat && m.getLatLng().lng === lon
+    );
 
-            // ✅ Check if the marker is already in view
-            if (map.getBounds().contains(targetLatLng)) {
-                console.log("Marker is already in view. Highlighting.");
-                highlightMarker(postcard.postcardID);
-                marker.openPopup();
-                return;
-            }
+    if (marker) {
+        const targetLatLng = marker.getLatLng();
 
-            // ✅ Ensure the marker is visible and pan to it smoothly
-            markers.zoomToShowLayer(marker, () => {
-                map.flyTo(targetLatLng, map.getZoom(), {
-                    animate: true,
-                    duration: 1.5, // Smooth and quick
-                    easeLinearity: 0.25
-                });
+        if (map.getBounds().contains(targetLatLng)) {
+            highlightMarker(postcard.postcardID);
+            marker.openPopup?.();
+            return;
+        }
 
-                setTimeout(() => {
-                    highlightMarker(postcard.postcardID);
-                    marker.openPopup();
-                    console.log("Marker shown and highlighted.");
-                }, 500); // Small delay for animation
-            });
-        } else {
-            console.warn("Marker not found in cluster. Panning directly.");
-            map.flyTo([lat, lon], map.getZoom(), {
+        markers.zoomToShowLayer(marker, () => {
+            map.flyTo(targetLatLng, map.getZoom(), {
                 animate: true,
                 duration: 1.5,
                 easeLinearity: 0.25
             });
-            highlightMarker(postcard.postcardID);
-        }
+            setTimeout(() => {
+                highlightMarker(postcard.postcardID);
+                marker.openPopup?.();
+            }, 500);
+        });
     } else {
-        console.error("Invalid coordinates for postcard (lat/lon):", postcard);
+        console.warn("Marker not found in cluster; panning directly.");
+        map.flyTo([lat, lon], map.getZoom(), {
+            animate: true,
+            duration: 1.5,
+            easeLinearity: 0.25
+        });
+        highlightMarker(postcard.postcardID);
     }
 }
+
 
 
 // ✅ Ensure Marker Remains Highlighted after Clustering Updates
@@ -580,7 +627,9 @@ document.getElementById('sort-by').addEventListener('change', (event) => {
     populateGallery(); // Refresh the gallery after sorting
 });
 
-// ✅ Function to Sort Postcards
+function latAscValue(p)  { return Number.isFinite(p.lat) ? p.lat :  Number.POSITIVE_INFINITY; }
+function latDescValue(p) { return Number.isFinite(p.lat) ? p.lat :  Number.NEGATIVE_INFINITY; }
+
 function sortPostcards() {
     postcards.sort((a, b) => {
         if (sortOrder === "date-desc") {
@@ -588,53 +637,68 @@ function sortPostcards() {
         } else if (sortOrder === "date-asc") {
             return new Date(a.datePosted) - new Date(b.datePosted);
         } else if (sortOrder === "south-north-asc") {
-            return parseFloat(a.lat) - parseFloat(b.lat);
+            return latAscValue(a) - latAscValue(b);
         } else if (sortOrder === "south-north-desc") {
-            return parseFloat(b.lat) - parseFloat(a.lat);
+            return latDescValue(a) - latDescValue(b);
         } else if (sortOrder === "recent-asc") {
-            // ✅ Sort by ID (oldest first - ascending)
             return parseInt(a.postcardID) - parseInt(b.postcardID);
         } else if (sortOrder === "recent-desc") {
-            // ✅ Sort by ID (newest first - descending)
             return parseInt(b.postcardID) - parseInt(a.postcardID);
         }
-        return 0; // Default no sort
+        return 0;
     });
 }
+
 
 // ✅ Function to Populate Gallery with Sorting Logic
 function populateGallery() {
-    galleryView.innerHTML = '';
+  galleryView.innerHTML = '';
+  const sortedPostcards = [...postcards];
 
-    // ✅ Sort Postcards Based on Selected Option
-    const sortedPostcards = [...postcards];
+  sortedPostcards.forEach(postcard => {
+    const card = document.createElement('div');
+    card.className = 'gallery-card';
+    card.style.position = 'relative'; // ensure overlay positions correctly
 
-    // ✅ Populate Sorted Gallery
-    sortedPostcards.forEach(postcard => {
-        const card = document.createElement('div');
-        card.className = 'gallery-card';
+    const img = document.createElement('img');
+    img.src = showBacks ? getS3ImageURL(postcard.postcardID, 'B')
+                        : getS3ImageURL(postcard.postcardID, 'F');
+    img.alt = `Postcard from ${postcard.placePosted || 'Not Available'}`;
+    img.loading = 'lazy';
 
-        const img = document.createElement('img');
-        img.src = showBacks ? getS3ImageURL(postcard.postcardID, 'B') : getS3ImageURL(postcard.postcardID, 'F');
-        img.alt = `Postcard from ${postcard.placePosted}`;
-        img.loading = 'lazy';
+    // If mature & not opted in → blur with overlay + one-card reveal
+    if (postcard.isMature && !showMature) {
+      card.classList.add('mature-blurred');
 
-        // ✅ Display name with 'Anonymous' if flagged
-        const displayName = postcard.anonymous === 'Y' ? 'Anonymous' : postcard.name;
-        console.log(`Gallery - Postcard ${postcard.postcardID} Name: ${displayName} (Anonymous: ${postcard.anonymous})`);
+      const overlay = document.createElement('div');
+      overlay.className = 'mature-overlay';
+      overlay.innerHTML = `
+        <span aria-label="Mature content badge">18+ Mature</span>
+        <button class="reveal-once" type="button">Reveal</button>
+      `;
+      overlay.querySelector('.reveal-once').addEventListener('click', (e) => {
+        e.stopPropagation();
+        card.classList.remove('mature-blurred'); // reveal just this card
+        if (typeof gtag === "function") {
+          gtag('event', 'mature_reveal_once', { event_category: 'Filter' });
+        }
+      });
+      card.appendChild(overlay);
+    }
 
-        // ✅ Click event to load sidebar with postcard
-        card.addEventListener('click', function() {
-            selectedPostcardID = postcard.postcardID; // ✅ Track selected postcard
-            updateSidebar(postcard);
-            highlightMarker(postcard.postcardID); // ✅ Highlight on Map
-            highlightSelectedCard(); // ✅ Highlight in Gallery
-        });
-
-        card.appendChild(img);
-        galleryView.appendChild(card);
+    // Open in sidebar on click (sidebar will also gate if needed)
+    card.addEventListener('click', function() {
+      selectedPostcardID = postcard.postcardID;
+      updateSidebar(postcard);
+      highlightMarker(postcard.postcardID);
+      highlightSelectedCard();
     });
+
+    card.appendChild(img);
+    galleryView.appendChild(card);
+  });
 }
+
 
 
 
@@ -661,14 +725,15 @@ function viewNextCard() {
     // ✅ Determine Current Sort Order
     const sortType = document.getElementById("sort-by").value;
     const sortedPostcards = [...postcards].sort((a, b) => {
-        if (sortType === "date-asc") return new Date(a.datePosted) - new Date(b.datePosted);
+        if (sortType === "date-asc")  return new Date(a.datePosted) - new Date(b.datePosted);
         if (sortType === "date-desc") return new Date(b.datePosted) - new Date(a.datePosted);
-        if (sortType === "south-north-asc") return parseFloat(a.lat) - parseFloat(b.lat);
-        if (sortType === "south-north-desc") return parseFloat(b.lat) - parseFloat(a.lat);
-        if (sortType === "recent-asc") return parseInt(a.postcardID) - parseInt(b.postcardID);
+        if (sortType === "south-north-asc")  return latAscValue(a) - latAscValue(b);
+        if (sortType === "south-north-desc") return latDescValue(a) - latDescValue(b);
+        if (sortType === "recent-asc")  return parseInt(a.postcardID) - parseInt(b.postcardID);
         if (sortType === "recent-desc") return parseInt(b.postcardID) - parseInt(a.postcardID);
         return 0;
     });
+
 
     console.log("Sorted postcards for next card:", sortedPostcards);
 
@@ -822,6 +887,12 @@ function rotatePostcard() {
 
 
 
+function setS3Img(el, postcardID, type) {
+    const lower = `${S3_BASE_URL}${postcardID}_${type}.jpg`;
+    const upper = `${S3_BASE_URL}${postcardID}_${type}.JPG`;
+    el.src = lower;
+    el.onerror = () => { el.onerror = null; el.src = upper; };
+}
 
 
 
@@ -938,3 +1009,114 @@ function updateMileMarkers() {
 
 // ✅ Call the function to load mile markers when the map is initialized
 addMileMarkers();
+
+
+
+
+// Mature-content global (persisted)
+let showMature = JSON.parse(localStorage.getItem("showMature") || "false");
+
+const toggleMature = document.getElementById("toggle-mature");
+if (toggleMature) {
+  toggleMature.checked = showMature;
+  toggleMature.addEventListener("change", () => {
+    showMature = toggleMature.checked;
+    localStorage.setItem("showMature", JSON.stringify(showMature));
+    populateGallery();
+    if (typeof gtag === "function") {
+      gtag('event', 'mature_toggle', { event_category: 'Filter', value: showMature ? 1 : 0 });
+    }
+  });
+}
+
+
+
+
+// Info popover for "What counts as mature?"
+function initMaturePopover() {
+  const wrap = document.getElementById('mature-toggle');  // the label.pill-switch
+  if (!wrap) return;
+
+  const btn = wrap.querySelector('.info');                // the tiny "i" button
+  let pop = wrap.querySelector('.mature-popover');        // the popover DIV inside the label
+  if (!btn || !pop) return;
+
+  // Move popover to <body> so no ancestor can clip it
+  pop.remove();
+  document.body.appendChild(pop);
+  pop.hidden = true;                                      // start closed
+
+  const mq = window.matchMedia('(max-width: 768px)');
+
+  // Position the popover: centered on mobile, anchored to button on desktop
+  function place() {
+    if (mq.matches) {
+      // Mobile: CSS handles centering; nothing to compute
+      return;
+    }
+    // Desktop: place near the "i" button, clamped to viewport
+    const r = btn.getBoundingClientRect();
+    const margin = 8;
+
+    // Temporarily show invisibly to measure
+    const wasHidden = pop.hidden;
+    const prevVis = pop.style.visibility;
+    pop.hidden = false;
+    pop.style.visibility = 'hidden';
+    const pw = pop.offsetWidth || 280;
+    const ph = pop.offsetHeight || 140;
+    pop.style.visibility = prevVis;
+    pop.hidden = wasHidden;
+
+    let top  = Math.min(window.innerHeight - ph - margin, Math.max(margin, r.bottom + margin));
+    let left = Math.min(window.innerWidth  - pw - margin, Math.max(margin, r.right - pw + 24));
+
+    pop.style.top = `${top}px`;
+    pop.style.left = `${left}px`;
+    pop.style.transform = 'none';
+  }
+
+  function open() {
+    wrap.classList.add('open');               // for a11y/state, optional
+    btn.setAttribute('aria-expanded','true');
+    pop.hidden = false;
+    pop.classList.add('is-open');             // <-- makes it visible
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true); // re-place if any scroll
+  }
+
+  function close() {
+    wrap.classList.remove('open');
+    btn.setAttribute('aria-expanded','false');
+    pop.classList.remove('is-open');
+    pop.hidden = true;
+    window.removeEventListener('resize', place);
+    window.removeEventListener('scroll', place, true);
+  }
+
+  // Click to toggle
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    pop.hidden ? open() : close();
+  });
+
+  // Close on outside click / ESC
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target) && !pop.contains(e.target)) close();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  // Optional desktop hover open
+  function setHoverBindings() {
+    if (mq.matches) return; // mobile: click only
+    let hoveringPopover = false;
+    wrap.addEventListener('mouseenter', open);
+    wrap.addEventListener('mouseleave', () => { if (!hoveringPopover) close(); });
+    pop.addEventListener('mouseenter', () => { hoveringPopover = true; });
+    pop.addEventListener('mouseleave', () => { hoveringPopover = false; close(); });
+  }
+  setHoverBindings();
+}
+
+document.addEventListener('DOMContentLoaded', initMaturePopover);

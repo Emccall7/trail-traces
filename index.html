@@ -58,11 +58,32 @@
     <div id="toolbar" class="toolbar">
         <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
         <button id="toggle-view">Show Backs</button>
+        <!-- Mature toggle (IDs/classes must match) -->
+        <label class="pill-switch" id="mature-toggle">
+            <input type="checkbox" id="toggle-mature" />
+            <span class="pill" aria-hidden="true"></span>
+            <span class="label">Show mature content</span>
+
+            <!-- info button that toggles the popover on click -->
+            <button class="info" type="button"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    aria-controls="mature-popover">i</button>
+
+            <!-- the popover MUST be inside .pill-switch -->
+            <div id="mature-popover" class="mature-popover" role="dialog" tabindex="-1">
+            <div class="popover-title">
+                <span class="badge-18">18+</span> Mature content
+            </div>
+            <p>May contain profanity, sexual themes, explicit language, or other adult material. Mature cards are blurred by default.</p>
+            </div>
+        </label>
+        
         <select id="sort-by">
             <option value="date-desc">Sort by: Creation Date (New First)</option>
             <option value="date-asc">Sort by: Creation Date (Old First)</option>
-            <option value="recent-asc">Sort by: Upload Date (Old First)</option>
             <option value="recent-desc">Sort by: Upload Date (New First)</option>
+            <option value="recent-asc">Sort by: Upload Date (Old First)</option>
             <option value="south-north-asc">Sort by: South to North</option>
             <option value="south-north-desc">Sort by: North to South</option>
         </select>

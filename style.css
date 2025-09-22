@@ -780,3 +780,445 @@ html, body {
     z-index: 10; /* Ensure it stays above the trail line */
     opacity: 0.0; /* NOT VISIBLE !!!!!! */
 }
+
+
+
+
+
+
+
+/* ===== Mature UI (Theme-aligned) ===== *//* ===== Mature UI (Theme-aligned) ===== *//* ===== Mature UI (Theme-aligned) ===== *//* ===== Mature UI (Theme-aligned) ===== *//* ===== Mature UI (Theme-aligned) ===== */
+
+/* ===== Mature UI (Theme-aligned, consolidated) ===== */
+:root{
+  --teal:#008286;
+  --teal-600:#005d5f;
+  --teal-050:#f0fbfb;
+  --ink:#3e3e3e;
+  --sand:#e49a23;
+}
+
+/* Toggle wrapper aligns with toolbar controls */
+.pill-switch{
+  position: relative;                /* positioning context for popover */
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:#fff;
+  border:1px solid var(--teal);
+  border-radius:20px;
+  padding:5px 10px;
+  height:28px;
+  line-height:1;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+/* Hide the native checkbox */
+.pill-switch input{
+  position:absolute; opacity:0; pointer-events:none;
+}
+
+/* The pill (switch) */
+.pill{
+  position:relative;
+  width:40px; height:18px;
+  background:#e9f4f4;
+  border:1px solid var(--teal);
+  border-radius:999px;
+  transition: background .2s ease, border-color .2s ease;
+}
+.pill::after{
+  content:"";
+  position:absolute; top:50%; left:2px; transform:translateY(-50%);
+  width:14px; height:14px; background:var(--teal); border-radius:50%;
+  transition:left .2s ease, background .2s ease;
+}
+.pill-switch input:checked + .pill{
+  background: var(--teal); border-color: var(--teal);
+}
+.pill-switch input:checked + .pill::after{
+  left:24px; background:#fff;
+}
+
+/* Label text */
+.pill-switch .label{
+  font-size:13px; color:var(--teal); font-weight:600;
+}
+
+/* Tiny info chip */
+.pill-switch .info{
+  border:1px solid var(--teal);
+  background:#fff;
+  color:var(--teal);
+  width:20px; height:20px; border-radius:50%;
+  line-height:18px; text-align:center; font-size:12px;
+  cursor:pointer;
+  transition:background .2s, color .2s, transform .2s;
+}
+.pill-switch .info:hover{
+  background:var(--teal); color:#fff; transform:scale(1.05);
+}
+
+/* Popover (hidden by default) */
+.mature-popover{
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;                          /* align to the right edge of the switch */
+  z-index: 2000;                     /* above toolbar/map bits */
+  width: min(360px, 86vw);
+  background:#fff;
+  color: var(--ink);
+  border:1px solid #ddd;
+  box-shadow:0 6px 18px rgba(0,0,0,.12);
+  border-radius:10px;
+  padding:14px 16px;
+  font-size:14px;
+  line-height:1.45;
+
+  opacity: 0;
+  transform: translateY(-4px) scale(.98);
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.mature-popover::before{
+  content:"";
+  position:absolute;
+  top:-7px; right:22px;
+  width:12px; height:12px;
+  background:#fff;
+  border-left:1px solid #ddd;
+  border-top:1px solid #ddd;
+  transform: rotate(45deg);
+}
+.popover-title{
+  font-weight:700; color: var(--teal);
+  display:flex; align-items:center; gap:8px; margin-bottom:6px;
+}
+
+/* Show on hover, keyboard focus, or when JS toggles .open */
+.pill-switch:hover .mature-popover,
+.pill-switch:focus-within .mature-popover,
+.pill-switch.open .mature-popover{
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+/* Gallery blur overlay styled to theme */
+.mature-blurred img{ filter: blur(12px); }
+.mature-overlay{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; gap:.5rem;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(2px);
+  border: 1px dashed var(--teal);
+  color: var(--teal);
+  font-weight:700;
+  text-align:center;
+  padding:.75rem;
+}
+.mature-overlay .reveal-once{
+  border:1px solid var(--teal);
+  padding:.45rem .75rem; border-radius:5px; background:#fff; color:var(--teal);
+  cursor:pointer; font-weight:700;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.mature-overlay .reveal-once:hover{
+  background:var(--teal); color:#fff; transform:scale(1.03);
+}
+
+/* Sidebar gate styled like your cards/buttons */
+/* ===== Sidebar mature gate with blurred hero image ===== */
+.gate {
+  padding: 12px;
+  border: 1px solid #ddd;
+  background: var(--teal-050);
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* The blurred preview block at the top of the gate */
+.gate-hero {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 7 / 5;     /* matches your cards */
+  margin: 0 auto 10px auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+  cursor: pointer;         /* whole hero is clickable to reveal */
+}
+
+.gate-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(14px) saturate(95%);
+  transform: scale(1.03);
+}
+
+/* Overlay that sits on top of the blurred image */
+.gate-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(2px);
+  color: var(--teal);
+  font-weight: 700;
+  padding: .75rem;
+}
+
+.gate-overlay .overlay-title {
+  font-size: 14px;
+}
+
+.reveal-once {
+  border: 1px solid var(--teal);
+  padding: .45rem .75rem;
+  border-radius: 5px;
+  background: #fff;
+  color: var(--teal);
+  cursor: pointer;
+  font-weight: 700;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.reveal-once:hover {
+  background: var(--teal);
+  color: #fff;
+  transform: scale(1.03);
+}
+
+/* Actions below the hero */
+.gate-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.gate-actions button {
+  border: 1px solid var(--teal);
+  background: #fff;
+  color: var(--teal);
+  padding: .45rem .75rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.gate-actions button:hover {
+  background: var(--teal);
+  color: #fff;
+  transform: scale(1.03);
+}
+
+/* Badge (reuse your theme color) */
+.badge-18 {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: #e49a23;
+  border-radius: 999px;
+  padding: 2px 8px;
+  letter-spacing: .3px;
+}
+
+/* Mobile: keep it comfy */
+@media (max-width: 768px) {
+  .gate-hero {
+    aspect-ratio: 7 / 5;
+    max-width: 100%;
+  }
+}
+
+
+
+/* ========= Toolbar & Mature UI: mobile fixes ========= */
+@media (max-width: 768px) {
+  /* Let the toolbar wrap, avoid squeeze */
+  #toolbar {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;
+    height: auto;                 /* allow rows */
+    padding: 6px 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;              /* wrap to 2 lines when needed */
+    justify-content: center;
+    align-items: center;
+    overflow-x: auto;             /* graceful fallback */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Buttons shrink a bit */
+  #toggle-view {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  /* Switch gets tighter spacing */
+  .pill-switch {
+    gap: 6px;
+    padding: 4px 8px;
+    height: 26px;
+    flex: 0 1 auto;               /* don’t stretch too wide */
+  }
+  .pill { width: 36px; height: 16px; }
+  .pill::after { width: 12px; height: 12px; left: 2px; }
+  .pill-switch input:checked + .pill::after { left: 22px; }
+  .pill-switch .label { font-size: 12px; }
+
+  /* Sort dropdown: narrower & smaller text */
+  #sort-by {
+    font-size: 12px;
+    padding: 4px 28px 4px 8px;
+    min-width: 140px;
+    max-width: 48vw;              /* prevent overflow */
+  }
+
+  /* Popover becomes centered "sheet" so it never goes off-screen */
+  .pill-switch { position: relative; }
+  .mature-popover {
+    right: auto;                  /* stop anchoring to right edge */
+    left: 50%;
+    transform: translate(-50%, 0) scale(1); /* centered */
+    top: calc(100% + 8px);
+    width: min(92vw, 420px);      /* roomy but safe */
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .pill-switch:hover .mature-popover,
+  .pill-switch:focus-within .mature-popover,
+  .pill-switch.open .mature-popover {
+    transform: translate(-50%, 0) scale(1); /* keep same when visible */
+  }
+  .mature-popover::before {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) rotate(45deg);
+  }
+}
+
+/* Extra tiny phones: show “18+” label shorter to save room */
+@media (max-width: 420px) {
+  .pill-switch .label { display: none; }     /* hide long label */
+  .pill-switch .info { margin-left: 2px; }
+}
+
+/* Make sure the popover sits above everything when portaled to <body> */
+.mature-popover { z-index: 4000; }
+
+/* Mobile: center it so it never clips */
+@media (max-width: 768px) {
+  .mature-popover {
+    position: fixed !important;
+    top: 18vh;
+    left: 50%;
+    transform: translateX(-50%) !important;
+    width: min(92vw, 420px);
+    max-height: 65vh;
+    overflow: auto;
+  }
+  /* We’re using JS to open/close on mobile; ignore hover rules */
+  .pill-switch:hover .mature-popover,
+  .pill-switch:focus-within .mature-popover { opacity: 0; pointer-events: none; }
+  .pill-switch.open .mature-popover { opacity: 1; pointer-events: auto; }
+  .mature-popover::before { display:none; } /* no arrow in center mode */
+}
+
+
+/* Popover is hidden by default */
+.mature-popover {
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4000; /* above toolbar/map */
+}
+
+/* Show when JS toggles this class */
+.mature-popover.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Mobile: fixed, centered sheet so it never clips */
+@media (max-width: 768px) {
+  .mature-popover {
+    position: fixed !important;
+    top: 18vh;
+    left: 50%;
+    transform: translateX(-50%) !important;
+    width: min(92vw, 420px);
+    max-height: 65vh;
+    overflow: auto;
+  }
+  .mature-popover::before { display: none; } /* no arrow in center mode */
+}
+
+/* Desktop stays anchored near the info button; JS sets top/left */
+@media (min-width: 769px) {
+  .mature-popover {
+    position: fixed; /* placed by JS using getBoundingClientRect() */
+  }
+}
+
+
+
+/* Mature gate hero (blurred preview with button-only click) */
+/* Rounded teal box */
+.gate {
+  background: var(--teal-050);
+  border: 1px solid #ddd;
+  border-radius: 10px;        /* ✅ rounded box */
+  padding: 12px;
+  overflow: visible !important; /* don't clip the square image */
+}
+
+/* Square preview image (no rounding) */
+.gate-hero { 
+  position: relative; 
+  margin-bottom: 10px; 
+  border-radius: 0 !important;
+}
+.gate-hero img,
+.gate-hero .gate-image {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border: 0;
+  border-radius: 0 !important;        /* ✅ square image corners */
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  clip-path: none !important;
+}
+
+/* Blur effect (keeps corners square) */
+.gate-hero .gate-image.blurred { filter: blur(12px); }
+
+/* Overlay + button stays the same */
+.gate-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem;
+  background: rgba(255,255,255,.5);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+.gate-overlay .reveal-once {
+  pointer-events: auto;
+  border:1px solid var(--teal);
+  background:#fff; color: var(--teal);
+  padding:.45rem .75rem; border-radius:5px; font-weight:700; cursor:pointer;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.gate-overlay .reveal-once:hover { background: var(--teal); color:#fff; transform: scale(1.03); }
+.overlay-title { font-weight:700; color: var(--teal); }
