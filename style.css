@@ -478,7 +478,7 @@ html, body {
 /* ✅ Mobile View: Centered Gallery */
 @media (max-width: 1024px) {
     #gallery-view {
-        padding-top: 200px;
+        padding-top: 175px;
         margin: 0 auto; /* Centered */
         justify-content: center;
         padding-bottom: 0px;
@@ -1221,11 +1221,7 @@ html, body {
   height: 0;
 }
 
-/* Normalize the look so it behaves like a regular text field */
-#search-input {
-  -webkit-appearance: textfield;
-  appearance: textfield;
-}
+
 
 
 
