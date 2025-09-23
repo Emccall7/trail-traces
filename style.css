@@ -1195,8 +1195,14 @@ html, body {
   background:#fff; border:0px solid #008286; border-radius:20px; padding:2px 6px;
 }
 #search-input {
+    
   border:none; outline:none; font-size:16px; padding:4px 6px; min-width: 240px;
 }
+#search-input[type="search"]{
+  -webkit-appearance: none;   /* was textfield — switch to none */
+  appearance: none;
+}
+
 #search-clear {
   border:none; background:transparent; color:#008286; font-size:18px; line-height:1;
   cursor:pointer; padding:0 4px;
