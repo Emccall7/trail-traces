@@ -1711,3 +1711,5 @@ window.addEventListener('resize', sizeSmartSort);
 
 
 
+const el = document.getElementById('search-input');
+console.log('input size:', getComputedStyle(el).fontSize);

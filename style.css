@@ -1221,12 +1221,27 @@ html, body {
   height: 0;
 }
 
+/* Normalize the look so it behaves like a regular text field */
+#search-input {
+  -webkit-appearance: textfield;
+  appearance: textfield;
+}
 
 
+#search-input::placeholder {
+  font-size: 16px !important;
+}
 
 
-
-
+/* iOS-only tweak so the 16px wins on iPhone */
+@supports (-webkit-touch-callout: none) {
+  #search-input,
+  #search-input::placeholder {
+    font-size: 16px !important;
+  }
+}
+const el = document.getElementById('search-input');
+console.log('input size:', getComputedStyle(el).fontSize);
 
 
 
