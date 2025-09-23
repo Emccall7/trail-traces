@@ -1202,7 +1202,7 @@ html, body {
   cursor:pointer; padding:0 4px;
 }
 @media (max-width: 768px){
-  #search-input{ min-width: 180px; font-size:18px; }
+  #search-input{ min-width: 180px; font-size:24px; }
 }
 
 /* WebKit (Safari/Chrome/Brave/Edge Chromium) */
@@ -1240,8 +1240,6 @@ html, body {
     font-size: 16px !important;
   }
 }
-const el = document.getElementById('search-input');
-console.log('input size:', getComputedStyle(el).fontSize);
 
 
 
