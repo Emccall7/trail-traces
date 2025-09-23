@@ -21,6 +21,13 @@
     <!-- PapaParse CSV Parser -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
+    <!-- put this before your script.js -->
+    <script src="https://unpkg.com/minisearch@6.3.0/dist/umd/index.min.js"></script>
+
+    <!-- put this above your script.js -->
+    <script src="https://cdn.jsdelivr.net/npm/minisearch@6.3.0/dist/umd/index.min.js"></script>
+
+
     <link rel="icon" href="favicon.png" type="image/png">
 </head>
 
@@ -34,19 +41,7 @@
   gtag('config', 'G-BLWTLNG5NY');
 </script>
 
-<script>
-    document.querySelectorAll('.social-links a').forEach(icon => {
-        icon.addEventListener('click', function() {
-            const platform = this.href.includes('instagram') ? 'Instagram' : 'Facebook';
-            gtag('event', 'click', {
-                'event_category': 'Social Media',
-                'event_label': platform,
-                'value': 1
-            });
-            console.log(`Clicked ${platform} Link`);
-        });
-    });
-</script>
+
 
 
 <body>
@@ -56,8 +51,11 @@
     </header>
 
     <div id="toolbar" class="toolbar">
-        <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
-        <button id="toggle-view">Show Backs</button>
+        <div class="search-wrap">
+            <input id="search-input" type="search" placeholder="Search text / doodle / name…" aria-label="Search postcards" />
+            <button id="search-clear" type="button" aria-label="Clear search">×</button>
+        </div>
+        
         <!-- Mature toggle (IDs/classes must match) -->
         <label class="pill-switch" id="mature-toggle">
             <input type="checkbox" id="toggle-mature" />
@@ -87,6 +85,9 @@
             <option value="south-north-asc">Sort by: South to North</option>
             <option value="south-north-desc">Sort by: North to South</option>
         </select>
+
+        <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
+        <button id="toggle-view">Show Backs</button>
     </div>
 
     <div id="map"></div>
@@ -169,4 +170,19 @@
     <script src="script.js"></script>
 
 </body>
+
+<script>
+    document.querySelectorAll('.social-links a').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const platform = this.href.includes('instagram') ? 'Instagram' : 'Facebook';
+            gtag('event', 'click', {
+                'event_category': 'Social Media',
+                'event_label': platform,
+                'value': 1
+            });
+            console.log(`Clicked ${platform} Link`);
+        });
+    });
+</script>
+
 </html>
