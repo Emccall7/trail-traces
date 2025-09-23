@@ -87,7 +87,7 @@ html, body {
     align-items: center;
     justify-content: center; /* ✅ Centers the title */
     padding: 0 20px;
-    border-bottom: 2px solid #008286;
+    border-bottom: 02px solid #008286;
     z-index: 1000;
     text-align: center;
 }
@@ -616,7 +616,7 @@ html, body {
     font-weight: bold;
     color: #008286;
     background-color: white;
-    border: 1px solid #008286;
+    border: 0px solid #008286;
     border-radius: 20px;
     cursor: pointer;
     transition: background 0.3s ease, color 0.3s ease;
@@ -642,7 +642,7 @@ html, body {
     padding: 5px 10px;
     font-size: 14px;
     margin-left: 5px;
-    border: 1px solid #008286;
+    border: 0px solid #008286;
     border-radius: 20px;
     background-color: white;
     color: #008286;
@@ -746,7 +746,7 @@ html, body {
   align-items:center;
   gap:10px;
   background:#fff;
-  border:1px solid var(--teal);
+  border:0px solid var(--teal);
   border-radius:20px;
   padding:5px 10px;
   height:28px;
@@ -1192,17 +1192,17 @@ html, body {
 
 .search-wrap {
   display:flex; align-items:center; gap:6px;
-  background:#fff; border:1px solid #008286; border-radius:20px; padding:2px 6px;
+  background:#fff; border:0px solid #008286; border-radius:20px; padding:2px 6px;
 }
 #search-input {
-  border:none; outline:none; font-size:24px; padding:4px 6px; min-width: 210px;
+  border:none; outline:none; font-size:16px; padding:4px 6px; min-width: 210px;
 }
 #search-clear {
   border:none; background:transparent; color:#008286; font-size:18px; line-height:1;
   cursor:pointer; padding:0 4px;
 }
 @media (max-width: 768px){
-  #search-input{ min-width: 180px; font-size:24px; }
+  #search-input{ min-width: 180px; font-size:18px; }
 }
 
 /* WebKit (Safari/Chrome/Brave/Edge Chromium) */
@@ -1228,18 +1228,9 @@ html, body {
 }
 
 
-#search-input::placeholder {
-  font-size: 16px !important;
-}
 
 
-/* iOS-only tweak so the 16px wins on iPhone */
-@supports (-webkit-touch-callout: none) {
-  #search-input,
-  #search-input::placeholder {
-    font-size: 16px !important;
-  }
-}
+
 
 
 
@@ -1249,7 +1240,7 @@ html, body {
 .sort-trigger{
   display:inline-flex; align-items:center; gap:8px;
   padding:6px 10px;            /* right space for caret */
-  border:1px solid var(--teal); border-radius:20px;
+  border:0px solid var(--teal); border-radius:20px;
   background:#fff; color:var(--teal);
   cursor:pointer; line-height:1.2; white-space:nowrap;
   box-shadow:0 2px 6px rgba(0,0,0,.06);
@@ -1261,7 +1252,7 @@ html, body {
 
 .sort-menu{
   position:absolute; top:calc(100% + 6px); left:0; z-index:1200;
-  background:#fff; border:1px solid #ddd; border-radius:8px;
+  background:#fff; border:0px solid #ddd; border-radius:8px;
   box-shadow:0 8px 22px rgba(0,0,0,.14);
   padding:6px 0; margin:0; list-style:none;
   min-width:100%;  /* grow to longest item */
