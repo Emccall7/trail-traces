@@ -478,7 +478,7 @@ html, body {
 /* ✅ Mobile View: Centered Gallery */
 @media (max-width: 1024px) {
     #gallery-view {
-        padding-top: 175px;
+        padding-top: 200px;
         margin: 0 auto; /* Centered */
         justify-content: center;
         padding-bottom: 0px;
