@@ -7,6 +7,10 @@
     const mapView = document.getElementById('map');
     const galleryView = document.getElementById('gallery-view');
 
+    // ---- Search globals (declare early!)
+    let mini = null;
+    let searchIdSet = null;  // null => no active filter
+    let searchRank = null;   // Map(postcardID -> rank)
 
     // ✅ Switch between views
     galleryButton.addEventListener('click', function() {
@@ -180,17 +184,17 @@
 
 
     // ✅ Define the bounding box for the PCT region
-    const pctBounds = [
-        [25, -140], // Southwest corner
-        [55, -100]  // Northeast corner
-    ];
+    // const pctBounds = [
+    //     [25, -140], // Southwest corner
+    //     [55, -100]  // Northeast corner
+    // ];
 
     // ✅ Initialize the map with set boundaries and zoom constraints
     const map = L.map('map', {
         minZoom: 5,
         maxZoom: 16,
-        maxBounds: pctBounds,  // Restrict panning
-        maxBoundsViscosity: 0.8, // Adds resistance when nearing boundaries
+        // maxBounds: pctBounds,  // Restrict panning
+        // maxBoundsViscosity: 0.8, // Adds resistance when nearing boundaries
         zoomControl: false
     }).setView([42, -120], 5);
 
@@ -615,15 +619,71 @@
 
 
 
-    // ✅ Sort State
-    let sortOrder = "date-desc"; // Default: Newest First
+    let sortOrder = "date-desc";
+    let lastNonRelevanceSort = sortOrder;
 
-    // ✅ Initialize Toolbar Event
-    document.getElementById('sort-by').addEventListener('change', (event) => {
-        sortOrder = event.target.value;
-        sortPostcards();
-        populateGallery(); // Refresh the gallery after sorting
+    const sortSelect = document.getElementById('sort-by');
+
+    function getRelevanceOption() {
+    return [...sortSelect.options].find(o => o.value === 'relevance') || null;
+    }
+
+    function setSelectValueSafe(val) {
+    if (!sortSelect) return;
+    const ok = [...sortSelect.options].some(o => o.value === val);
+    if (ok) sortSelect.value = val;
+    }
+
+    function setRelevanceState(active) {
+        // native <select> option
+        const opt = getRelevanceOption();
+        if (opt) {
+            opt.disabled = !active;
+            opt.setAttribute('aria-disabled', String(!active));
+            opt.title = active ? 'Sort by search relevance' : 'Start a search to enable';
+
+            if (!active && sortSelect.value === 'relevance') {
+            setSelectValueSafe(lastNonRelevanceSort);
+            sortOrder = lastNonRelevanceSort;
+            sortPostcards();
+            populateGallery();
+            }
+        }
+
+        // custom menu item
+        const li = document.querySelector('#sort-menu [data-value="relevance"]');
+        if (li) {
+            li.classList.toggle('disabled', !active);
+            li.setAttribute('aria-disabled', String(!active));
+            li.dataset.disabled = String(!active);
+        }
+    }
+
+
+    sortSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+
+    if (val === 'relevance') {
+        // If relevance is disabled (no active search), bounce back instantly
+        const rel = getRelevanceOption();
+        if (!rel || rel.disabled) {
+        setSelectValueSafe(lastNonRelevanceSort);
+        return;
+        }
+        // relevance ordering is applied inside populateGallery
+        populateGallery();
+        return;
+    }
+
+    // regular sorts
+    sortOrder = val;
+    lastNonRelevanceSort = val;
+    sortPostcards();
+    populateGallery();
     });
+
+
+
 
     function latAscValue(p)  { return Number.isFinite(p.lat) ? p.lat :  Number.POSITIVE_INFINITY; }
     function latDescValue(p) { return Number.isFinite(p.lat) ? p.lat :  Number.NEGATIVE_INFINITY; }
@@ -664,13 +724,25 @@
 
         // If searching, order by search rank; otherwise keep current order
         const list = [...baseList];
-        if (searchRank) {
-            list.sort((a, b) => {
+        const sortType = document.getElementById('sort-by')?.value || sortOrder;
+
+        const relOpt = getRelevanceOption();
+        const useRelevance = (sortSelect && sortSelect.value === 'relevance' &&
+                                relOpt && !relOpt.disabled &&
+                                searchRank && searchRank.size > 0);
+
+        if (useRelevance) {
+        list.sort((a, b) => {
             const ra = searchRank.has(a.postcardID) ? searchRank.get(a.postcardID) : Number.POSITIVE_INFINITY;
             const rb = searchRank.has(b.postcardID) ? searchRank.get(b.postcardID) : Number.POSITIVE_INFINITY;
             return ra - rb;
-            });
+        });
+        } else {
+        // keep your normal ordering (already handled by sortPostcards())
         }
+
+
+        
 
         list.forEach(postcard => {
             const card = document.createElement('div');
@@ -716,10 +788,94 @@
         }
 
 
+    // SMART SORTING DROPDOWN -------------------------------
+    const sortWrap    = document.getElementById('smart-sort');
+    const sortTrigger = document.getElementById('sort-trigger');
+    const sortMenu    = document.getElementById('sort-menu');
+    const sortLabel   = document.getElementById('sort-label');
+
+    const LABELS = {
+    'date-desc': 'Newest first',
+    'date-asc': 'Oldest first',
+    'south-north-asc': 'South → North',
+    'south-north-desc': 'North → South',
+    'recent-desc': 'Most recent ID',
+    'recent-asc': 'Oldest ID',
+    'relevance': 'Relevance'
+    };
+
+    function labelFor(val){ return LABELS[val] || val; }
+
+    function openSort() {
+    sortWrap.classList.add('open');
+    sortTrigger.setAttribute('aria-expanded','true');
+    setTimeout(()=> sortMenu.focus(), 0);
+    }
+    function closeSort() {
+    sortWrap.classList.remove('open');
+    sortTrigger.setAttribute('aria-expanded','false');
+    }
+
+    sortTrigger.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    sortWrap.classList.contains('open') ? closeSort() : openSort();
+    });
+    document.addEventListener('click', (e)=>{
+    if (!sortWrap.contains(e.target)) closeSort();
+    });
+    document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape') closeSort();
+    });
+
+    function selectSort(value, apply = true) {
+    const li = sortMenu.querySelector(`[data-value="${value}"]`);
+    if (!li) return;
+
+    // Block disabled "relevance"
+    const isDisabled = li.dataset.disabled === 'true';
+    if (value === 'relevance' && isDisabled) return;
+
+    // Update state + label + hidden native select
+    if (value !== 'relevance') {
+        sortOrder = value;
+        lastNonRelevanceSort = value;
+    }
+    sortLabel.textContent = labelFor(value);
+    if (sortSelect) sortSelect.value = value;
+
+    // Apply
+    if (apply) {
+        if (value === 'relevance') {
+        populateGallery();
+        } else {
+        sortPostcards();
+        populateGallery();
+        }
+    }
+    closeSort();
+    }
+
+    // click selection
+    sortMenu.addEventListener('click', (e) => {
+        const li = e.target.closest('li[role="option"]');
+        if (!li) return;
+
+        const isDisabled =
+            li.classList.contains('disabled') ||
+            li.getAttribute('aria-disabled') === 'true' ||
+            li.dataset.disabled === 'true';
+
+        if (isDisabled) return;
+
+        selectSort(li.dataset.value);
+    });
 
 
-
-
+    // keep both UIs in sync if someone changes the hidden select programmatically
+    sortSelect.addEventListener('change', (e)=>{
+    const v = e.target.value;
+    sortLabel.textContent = labelFor(v);
+    });
 
 
 
@@ -741,15 +897,7 @@
 
         // ✅ Determine Current Sort Order
         const sortType = document.getElementById("sort-by").value;
-        const sortedPostcards = [...postcards].sort((a, b) => {
-            if (sortType === "date-asc")  return new Date(a.datePosted) - new Date(b.datePosted);
-            if (sortType === "date-desc") return new Date(b.datePosted) - new Date(a.datePosted);
-            if (sortType === "south-north-asc")  return latAscValue(a) - latAscValue(b);
-            if (sortType === "south-north-desc") return latDescValue(a) - latDescValue(b);
-            if (sortType === "recent-asc")  return parseInt(a.postcardID) - parseInt(b.postcardID);
-            if (sortType === "recent-desc") return parseInt(b.postcardID) - parseInt(a.postcardID);
-            return 0;
-        });
+        const sortedPostcards = getCurrentSortedList();
 
 
         console.log("Sorted postcards for next card:", sortedPostcards);
@@ -782,15 +930,7 @@
 
         // ✅ Determine Current Sort Order
         const sortType = document.getElementById("sort-by").value;
-        const sortedPostcards = [...postcards].sort((a, b) => {
-            if (sortType === "date-asc") return new Date(a.datePosted) - new Date(b.datePosted);
-            if (sortType === "date-desc") return new Date(b.datePosted) - new Date(a.datePosted);
-            if (sortType === "south-north-asc") return parseFloat(a.lat) - parseFloat(b.lat);
-            if (sortType === "south-north-desc") return parseFloat(b.lat) - parseFloat(a.lat);
-            if (sortType === "recent-asc") return parseInt(a.postcardID) - parseInt(b.postcardID);
-            if (sortType === "recent-desc") return parseInt(b.postcardID) - parseInt(a.postcardID);
-            return 0;
-        });
+        const sortedPostcards = getCurrentSortedList();
 
         console.log("Sorted postcards for previous card:", sortedPostcards);
 
@@ -1145,12 +1285,6 @@
     if (e.key === 'ArrowLeft')  viewPreviousCard();
     });
 
-    // ---- Search state (top-level) ----
-   // ---- Search state (top-level) ----
-    let mini = null;
-    let searchIdSet = null;   // null => no filter
-    let searchRank = null;    // Map(postcardID -> rank index)
-
     function buildSearchIndex() {
         console.log('[search] building index for', postcards.length, 'postcards');
         if (typeof MiniSearch !== 'function') {
@@ -1199,6 +1333,95 @@
         }
 
 
+    // --- Thesaurus & helpers for smart expansion ---
+    // Canonical buckets -> example hyponyms (all lower-case, singular-ish)
+    const THESAURUS = {
+    food: [
+        'oatmeal','granola','bar','snickers','poptart','ramen','noodle','pasta','rice','tortilla',
+        'bread','bagel','pancake','waffle','pizza','cheese','salami','tuna','peanut','butter',
+        'pb','jelly','trailmix','mix','snack','meal','breakfast','lunch','dinner','coffee','tea','cocoa'
+    ],
+    animal: [
+        'dog','cat','bear','deer','elk','moose','coyote','wolf','fox','bobcat','cougar','mountain','lion',
+        'squirrel','chipmunk','marmot','goat','horse','cow','sheep','rattlesnake','snake','lizard','frog',
+        'bird','eagle','hawk','owl','raven','crow','duck','goose','bee','wasp','spider','ant','mosquito'
+    ],
+    weather: [
+        'rain','snow','hail','sleet','wind','storm','thunder','lightning','sun','sunny','cloud','fog',
+        'heat','cold','freezing','hot','windy'
+    ],
+    plant: [
+        'tree','pine','fir','cedar','oak','maple','spruce','willow','aspen','flower','wildflower','bloom',
+        'moss','fern','cactus','grass','bush','shrub'
+    ],
+    gear: [
+        'pack','backpack','tent','stake','pole','poles','sleeping','bag','pad','stove','fuel','filter',
+        'bottle','bladder','shoe','shoes','sock','microspike','spike','gaiter','jacket','poncho','headlamp'
+    ]
+    };
+
+    // --- Minimal normalizer + singularizer (new) ---
+    function normalizeWord(s = '') {
+    return String(s)
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[^\w\s]/g, ' ')  // keep word boundaries
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function singularize(w = '') {
+    // common irregulars first
+    const irr = {
+        mice:'mouse', geese:'goose', children:'child',
+        men:'man', women:'woman', teeth:'tooth', feet:'foot',
+        people:'person'
+    };
+    if (irr[w]) return irr[w];
+
+    // simple plural rules
+    if (w.endsWith('ies') && w.length > 3) return w.slice(0, -3) + 'y'; // berries -> berry
+    if (w.endsWith('es')  && w.length > 2) return w.slice(0, -2);       // boxes -> box, dishes -> dish
+    if (w.endsWith('s')   && !w.endsWith('ss')) return w.slice(0, -1);  // dogs -> dog, but keep 'glass'
+    return w;
+    }
+
+// Aliases that should behave like a canonical term
+    const THESAURUS_ALIASES = {
+    foods: 'food', meals: 'food', snacks: 'food', snack: 'food', breakfast: 'food', lunch: 'food', dinner: 'food',
+    animals: 'animal', wildlife: 'animal', critter: 'animal', critters: 'animal',
+    plants: 'plant', flowers: 'plant', trees: 'plant', tree: 'plant',
+    storms: 'weather', sunny: 'weather', cloudy: 'weather'
+    };
+
+    // Simple “variants” so we match pancake/pancakes, dog/dogs, etc.
+    function wordVariants(w) {
+    const v = new Set([w]);
+    if (w.endsWith('y') && w.length > 3) v.add(w.slice(0, -1) + 'ies'); // berry -> berries
+    v.add(w + 's');
+    v.add(w + 'es');
+    return [...v];
+    }
+
+    // Expand a single user token into a set of tokens (category hyponyms + variants)
+    function expandTermSmart(raw) {
+    const t = singularize(normalizeWord(raw));        // you already have normalizeWord/singularize in your file
+    const canon = THESAURUS_ALIASES[t] || t;
+
+    // If it's a canonical bucket, pull its hyponyms; otherwise just the term
+    const baseList = THESAURUS[canon] || [t];
+
+    // Build a set of variants for each base token
+    const expanded = new Set();
+    baseList.forEach(b => wordVariants(singularize(b)).forEach(x => expanded.add(x)));
+
+    // Always include the original token variants too
+    wordVariants(t).forEach(x => expanded.add(x));
+
+    return [...expanded];
+    }
+
+
 
     function normalizeForSearch(s = '') {
         return String(s)
@@ -1213,20 +1436,26 @@
         return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
-        // require EVERY query term to appear as a whole word in ANY of the searchable fields
-        function docHasAllTerms(p, terms) {
+
+        // Check if a doc has ANY of tokens (whole-word match) across searchable fields incl. nameIndex
+        function docHasAnyOfTokens(p, tokens) {
         if (!p) return false;
-        const fieldsNorm = [
+        const fields = [
             normalizeForSearch(p.visualTagsF || ''),
             normalizeForSearch(p.cleanTextF  || ''),
             normalizeForSearch(p.visualTagsB || ''),
             normalizeForSearch(p.cleanTextB  || ''),
             normalizeForSearch(p.nameIndex   || '')
         ];
-        return terms.every(t => {
-            const rx = new RegExp(`\\b${escapeRegExp(t)}\\b`, 'i');
-            return fieldsNorm.some(f => rx.test(f));
+        return tokens.some(tok => {
+            const rx = new RegExp(`\\b${escapeRegExp(tok)}\\b`, 'i');
+            return fields.some(f => rx.test(f));
         });
+        }
+
+        // For multiple original terms: require EACH term’s expansion group to be satisfied
+        function docHasAllGroups(p, groups) {
+        return groups.every(groupTokens => docHasAnyOfTokens(p, groupTokens));
     }
 
 
@@ -1241,51 +1470,75 @@
         const raw = (query || '').trim();
         console.log('[search] query:', JSON.stringify(raw));
 
+        // If typing a query, clear any active theme chip (if you added theme chips earlier)
+        if (typeof activeTheme !== 'undefined' && activeTheme) {
+            activeTheme = null;
+            if (typeof highlightThemeChip === 'function') highlightThemeChip();
+        }
+
         // Clear search
         if (raw === '') {
             console.log('[search] empty query → clearing filter');
             searchIdSet = null;
             searchRank  = null;
+            setRelevanceState(false);      // disables Relevance everywhere
+            restoreLastSort();             // ← go back to the last non-relevance sort
             if (typeof applyMarkerFilter === 'function') applyMarkerFilter();
-            populateGallery();
-            return;
+            return;                        // (restoreLastSort already repopulated)
         }
 
-        // Normalize & drop very short tokens (keeps search strict)
-        const terms = raw
+
+        // Tokenize the user query (keep your stricter >= 3 chars rule)
+        const baseTerms = raw
             .split(/\s+/)
             .map(t => t.toLowerCase().normalize('NFKD').replace(/[^\w\s]/g, '').trim())
             .filter(t => t.length >= 3);
 
-        if (terms.length === 0) {
+        if (baseTerms.length === 0) {
             console.log('[search] all tokens too short → clearing filter');
             searchIdSet = null;
             searchRank  = null;
+            setRelevanceState(false);
+            restoreLastSort();             // ← snap back to last sort
             if (typeof applyMarkerFilter === 'function') applyMarkerFilter();
-            populateGallery();
             return;
         }
 
-        // MiniSearch: exact token matching only
-        const results = mini.search(terms.join(' '), {
-            prefix: false,        // no "dog"→"doggy"
-            fuzzy: 0,             // no typos
-            combineWith: 'AND',   // all terms must match
-            // fields are the ones you indexed in buildSearchIndex
-            // boost: { visualTagsF: 2, visualTagsB: 2 } // (optional weighting)
+
+        // Build expansion GROUPS: for each user term, a set of synonyms/hyponyms + variants
+        const groups = baseTerms.map(t => expandTermSmart(t));
+
+        // Union of all tokens (OR search in MiniSearch for recall)
+        const unionTokens = [...new Set(groups.flat())];
+
+        // 1) Wide recall with OR to collect candidates
+        const candidates = mini.search(unionTokens.join(' '), {
+            prefix: false,
+            fuzzy: 0,
+            combineWith: 'OR',
+            fields: ['visualTagsF','cleanTextF','visualTagsB','cleanTextB','nameIndex']
         });
 
-        // Extra strictness using whole-word matching across all fields *including nameIndex*
-        const filtered = results.filter(r => {
-        const p = postcardsById.get(r.id) || postcards.find(x => x.postcardID === r.id);
-        return docHasAllTerms(p, terms);
+        // 2) Strict refinement: require each original term’s group to match somewhere in the doc
+        const filtered = candidates.filter(r => {
+            const p = postcardsById.get(r.id) || postcards.find(x => x.postcardID === r.id);
+            return docHasAllGroups(p, groups);
         });
+        setRelevanceState(filtered.length > 0);
+
+        console.log('[relevance] enable?', filtered.length > 0,
+            '| nativeOpt?', !!getRelevanceOption(),
+            '| nativeDisabled?', getRelevanceOption()?.disabled,
+            '| customLiDisabled?', document.querySelector('#sort-menu [data-value="relevance"]')?.classList.contains('disabled'));
+
+
+
 
         searchIdSet = new Set(filtered.map(r => r.id));
         searchRank  = new Map(filtered.map((r, i) => [r.id, i]));
 
-        console.log('[search] results:', results.length,
-                    '| after strict check:', filtered.length,
+        console.log('[search] union candidates:', candidates.length,
+                    '| after group-AND:', filtered.length,
                     '| sample ids:', filtered.slice(0, 10).map(r => r.id));
 
         // Keep current view; just refresh what’s visible
@@ -1293,9 +1546,10 @@
         populateGallery();
 
         if (filtered.length === 0) {
-            galleryView.innerHTML = '<p style="margin-top:1rem;color:#666">No results. Try a different term.</p>';
+            galleryView.innerHTML = '<p style="margin-top:2rem;color:#666">No results. Try a different term.</p>';
         }
-        }
+    }
+
 
 
 
@@ -1357,3 +1611,103 @@
 
         console.log('[map] applyMarkerFilter → visible markers:', layers.length);
     }
+
+
+    
+
+
+
+
+    function compareByUserSort(a, b, sortType) {
+  if (sortType === "date-asc")  return new Date(a.datePosted) - new Date(b.datePosted);
+  if (sortType === "date-desc") return new Date(b.datePosted) - new Date(a.datePosted);
+  if (sortType === "south-north-asc")  return latAscValue(a) - latAscValue(b);
+  if (sortType === "south-north-desc") return latDescValue(a) - latDescValue(b);
+  if (sortType === "recent-asc")  return parseInt(a.postcardID) - parseInt(b.postcardID);
+  if (sortType === "recent-desc") return parseInt(b.postcardID) - parseInt(a.postcardID);
+  return 0;
+}
+
+function getCurrentSortedList() {
+  // Base set: full list or search-filtered
+  const base = searchIdSet
+    ? postcards.filter(p => searchIdSet.has(p.postcardID))
+    : [...postcards];
+
+  const sortType = document.getElementById('sort-by')?.value || sortOrder;
+
+  // Same comparator as gallery
+  return base.sort((a, b) => {
+    if (sortType === 'relevance' && searchRank) {
+      const ra = searchRank.get(a.postcardID) ?? Number.POSITIVE_INFINITY;
+      const rb = searchRank.get(b.postcardID) ?? Number.POSITIVE_INFINITY;
+      return ra - rb;
+    }
+    const primary = compareByUserSort(a, b, sortType);
+    if (primary !== 0) return primary;
+    if (searchRank) {
+      const ra = searchRank.get(a.postcardID) ?? Number.POSITIVE_INFINITY;
+      const rb = searchRank.get(b.postcardID) ?? Number.POSITIVE_INFINITY;
+      return ra - rb;
+    }
+    return 0;
+  });
+}
+
+function restoreLastSort() {
+  const safe = lastNonRelevanceSort || 'date-desc';
+
+  // If you have the custom menu helper, prefer it (keeps the label in sync)
+  if (typeof selectSort === 'function') {
+    selectSort(safe, true); // updates label + runs sortPostcards() + populateGallery()
+    return;
+  }
+
+  // Fallback: native select only
+  setSelectValueSafe(safe);
+  sortOrder = safe;
+  const labelEl = document.getElementById('sort-label');
+  if (labelEl) labelEl.textContent = (typeof labelFor === 'function') ? labelFor(safe) : safe;
+  sortPostcards();
+  populateGallery();
+}
+
+
+function sizeSmartSort() {
+  const trigger = document.getElementById('sort-trigger');
+  const menu    = document.getElementById('sort-menu');
+  if (!trigger || !menu) return;
+
+  // Temporarily show menu to measure natural widths
+  const prevDisplay = menu.style.display;
+  const prevVis     = menu.style.visibility;
+  menu.style.visibility = 'hidden';
+  menu.style.display    = 'block';
+  menu.style.width      = 'max-content';
+
+  let max = 0;
+  menu.querySelectorAll('li').forEach(li => {
+    const w = li.getBoundingClientRect().width;
+    if (w > max) max = w;
+  });
+
+  const extra = 30; // padding + caret room to match .sort-trigger
+  const final = Math.ceil(max + extra);
+
+  trigger.style.width   = final + 'px';
+  menu.style.minWidth   = final + 'px';
+
+  // Restore previous state
+  menu.style.display    = prevDisplay || '';
+  menu.style.visibility = prevVis || '';
+}
+
+window.addEventListener('load',   sizeSmartSort);
+window.addEventListener('resize', sizeSmartSort);
+
+
+
+
+
+
+

@@ -34,64 +34,6 @@
 
 
 
-/* ✅ Sort Dropdown Styling with Custom Arrow */
-#sort-by {
-    font-size: 14px;
-    background-color: white;
-    color: rgb(0, 130, 134);
-    cursor: pointer;
-    padding: 5px 10px;
-    padding-right: 30px; /* ✅ Adds space for the arrow */
-    border-width: 1px;
-    border-style: solid;
-    border-color: rgb(0, 130, 134);
-    border-radius: 5px;
-    transition: background 0.2s, transform 0.2s;
-    outline: none;
-    appearance: none;
-    /* text-align: center; */
-    min-width: 160px;
-    position: relative;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23008386" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpolyline points="6 9 12 15 18 9"%3E%3C/polyline%3E%3C/svg%3E');
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 12px;
-    overflow: hidden;
-}
-
-/* ✅ Media Query: Small Mobile (1 Column) */
-@media (max-width: 1000px) {
-    #sort-by {
-        font-size: 11px !important;
-    }
-    
-}
-
-
-
-/* ✅ Hover and Focus Effects */
-#sort-by:hover, 
-#sort-by:focus {
-    background-color: rgba(0, 130, 134, 0.1);
-    outline: none;
-    border-color: rgb(0, 130, 134);
-}
-
-/* ✅ Style for the Dropdown Options */
-#sort-by option {
-    color: rgb(0, 130, 134);
-    background-color: white;
-}
-
-/* ✅ Optional - Remove default dropdown arrow for a cleaner look */
-#sort-by::-ms-expand {
-    display: none;
-}
-
-
 
 
 
@@ -380,7 +322,7 @@ html, body {
     color: white;
     font-size: 16px;
     padding: 6px 10px;
-    border-radius: 5px;
+    border-radius: 50%;
     cursor: pointer;
     transition: background 0.3s ease-in-out, transform 0.2s;
 }
@@ -492,7 +434,7 @@ html, body {
     color: white;
     background-color: #008286; /* ✅ Matches theme */
     border: none;
-    border-radius: 5px;
+    border-radius: 20px;
     cursor: pointer;
     transition: background 0.3s ease-in-out, transform 0.2s ease;
 }
@@ -527,7 +469,6 @@ html, body {
 /* ✅ Adjusting Gallery for Desktop (Right-Aligned) */
 @media (min-width: 1024px) {
     #gallery-view {
-        justify-content: flex-end; /* ✅ Aligns the gallery to the right */
         margin-left: 350px; /* ✅ Adjust based on the sidebar width */
         max-width: calc(100vw-350px);
     }
@@ -537,7 +478,7 @@ html, body {
 /* ✅ Mobile View: Centered Gallery */
 @media (max-width: 1024px) {
     #gallery-view {
-        padding-top: 100px;
+        padding-top: 175px;
         margin: 0 auto; /* Centered */
         justify-content: center;
         padding-bottom: 0px;
@@ -551,7 +492,7 @@ html, body {
     aspect-ratio: 7 / 5;
     background-color: #f0f0f0;
     border: 2px solid #ddd;
-    border-radius: 8px;
+    border-radius: 2px;
     transition: transform 0.2s ease-in-out;
     overflow: hidden;
     display: flex;
@@ -623,13 +564,13 @@ html, body {
     width: 90%;  /* Matches share button width */
     max-width: 150px; /* Matches share button max width */
     margin: 10px auto; /* Centers the button */
-    padding: 10px 14px;
+    padding: 5px 10px;
     font-size: 16px;
     font-weight: bold;
     color: white;
     background-color: #008286; /* Matches theme */
     border: none;
-    border-radius: 5px;
+    border-radius: 20px;
     cursor: pointer;
     transition: background 0.3s ease-in-out, transform 0.2s ease;
 }
@@ -676,7 +617,7 @@ html, body {
     color: #008286;
     background-color: white;
     border: 1px solid #008286;
-    border-radius: 5px;
+    border-radius: 20px;
     cursor: pointer;
     transition: background 0.3s ease, color 0.3s ease;
     text-align: center;
@@ -700,9 +641,9 @@ html, body {
 #toggle-view {
     padding: 5px 10px;
     font-size: 14px;
-    margin-left: 15px;
+    margin-left: 5px;
     border: 1px solid #008286;
-    border-radius: 5px;
+    border-radius: 20px;
     background-color: white;
     color: #008286;
     cursor: pointer;
@@ -1038,6 +979,19 @@ html, body {
   }
 }
 
+/* center the label inside the trigger */
+.sort-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+
+
+
+
+
 
 
 /* ========= Toolbar & Mature UI: mobile fixes ========= */
@@ -1238,7 +1192,7 @@ html, body {
 
 .search-wrap {
   display:flex; align-items:center; gap:6px;
-  background:#fff; border:1px solid #008286; border-radius:6px; padding:2px 6px;
+  background:#fff; border:1px solid #008286; border-radius:20px; padding:2px 6px;
 }
 #search-input {
   border:none; outline:none; font-size:14px; padding:4px 6px; min-width: 210px;
@@ -1248,7 +1202,7 @@ html, body {
   cursor:pointer; padding:0 4px;
 }
 @media (max-width: 768px){
-  #search-input{ min-width: 150px; font-size:12px; }
+  #search-input{ min-width: 180px; font-size:12px; }
 }
 
 /* WebKit (Safari/Chrome/Brave/Edge Chromium) */
@@ -1272,3 +1226,82 @@ html, body {
   -webkit-appearance: textfield;
   appearance: textfield;
 }
+
+
+
+
+
+
+
+
+
+.smart-sort { position: relative; display: inline-block; font: inherit; }
+
+.sort-trigger{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px;            /* right space for caret */
+  border:1px solid var(--teal); border-radius:20px;
+  background:#fff; color:var(--teal);
+  cursor:pointer; line-height:1.2; white-space:nowrap;
+  box-shadow:0 2px 6px rgba(0,0,0,.06);
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .1s ease;
+}
+.sort-trigger:hover{ background:var(--teal-050); }
+.sort-trigger:focus{ outline:none; box-shadow:0 0 0 2px rgba(0,130,134,.18); }
+.sort-trigger > span[aria-hidden="true"]{ pointer-events:none; }
+
+.sort-menu{
+  position:absolute; top:calc(100% + 6px); left:0; z-index:1200;
+  background:#fff; border:1px solid #ddd; border-radius:8px;
+  box-shadow:0 8px 22px rgba(0,0,0,.14);
+  padding:6px 0; margin:0; list-style:none;
+  min-width:100%;  /* grow to longest item */
+  display:none;
+}
+.smart-sort.open .sort-menu{ display:block; }
+
+#sort-menu li{
+  padding:8px 12px; cursor:pointer; white-space:nowrap; color:var(--ink);
+  transition: background .15s ease, color .15s ease;
+}
+#sort-menu li:hover{ background:var(--teal-050); color:var(--teal); }
+#sort-menu li[aria-selected="true"]::after{
+  content:"✓"; float:right; color:var(--teal); font-weight:500;
+  
+}
+#sort-menu li.disabled, #sort-menu li[aria-disabled="true"]{
+  opacity:.5; pointer-events:none;
+}
+
+/* Mobile: smaller smart-sort label + items, keep comfy tap targets */
+@media (max-width: 768px){
+  .sort-trigger{
+    font-size: 12px;              /* smaller label */
+    padding: 2px 10px;    /* room for caret on the right */
+    min-height: 28px;             /* keep clickable */
+    max-width: 92vw;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  #sort-menu li{
+    font-size: 12px;              /* smaller menu items */
+    line-height: 1.3;
+    padding: 3px 5px;            /* readable, yet compact */
+    min-height: 24px;             /* ~36–40px is nice for touch */
+    white-space: nowrap;
+  }
+
+  .sort-menu{
+    max-width: 92vw;              /* prevent off-screen */
+  }
+}
+
+
+
+
+
+
+
+
+

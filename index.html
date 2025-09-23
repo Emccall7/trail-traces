@@ -52,10 +52,40 @@
 
     <div id="toolbar" class="toolbar">
         <div class="search-wrap">
-            <input id="search-input" type="search" placeholder="Search text / doodle / name…" aria-label="Search postcards" />
+            <input id="search-input" type="search" placeholder="Search markings / text / name" aria-label="Search postcards" />
             <button id="search-clear" type="button" aria-label="Clear search">×</button>
         </div>
         
+
+
+        <div class="smart-sort" id="smart-sort">
+            <button id="sort-trigger" class="sort-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span id="sort-label">Newest first</span>
+                <span aria-hidden="true">▾</span>
+            </button>
+            <ul id="sort-menu" class="sort-menu" role="listbox" tabindex="-1">
+                <li role="option" data-value="recent-desc">Most recently added</li>
+                <li role="option" data-value="recent-asc">Least recently added</li>
+                <li role="option" data-value="date-desc">Newest</li>
+                <li role="option" data-value="date-asc">Oldest</li>
+                <li role="option" data-value="south-north-asc">South → North</li>
+                <li role="option" data-value="south-north-desc">North → South</li>
+                <li role="option" data-value="relevance" class="is-relevance disabled" aria-disabled="true" data-disabled="true">Relevance</li>
+            </ul>
+
+            <!-- keep your old select to preserve existing code; we’ll keep it in sync -->
+            <select id="sort-by" hidden>
+                <option value="date-desc" selected>Newest first</option>
+                <option value="date-asc">Oldest first</option>
+                <option value="south-north-asc">South → North</option>
+                <option value="south-north-desc">North → South</option>
+                <option value="recent-desc">Most recent ID</option>
+                <option value="recent-asc">Oldest ID</option>
+                <option value="relevance">Relevance</option>
+            </select>
+        </div>
+
+
         <!-- Mature toggle (IDs/classes must match) -->
         <label class="pill-switch" id="mature-toggle">
             <input type="checkbox" id="toggle-mature" />
@@ -77,14 +107,7 @@
             </div>
         </label>
         
-        <select id="sort-by">
-            <option value="date-desc">Sort by: Creation Date (New First)</option>
-            <option value="date-asc">Sort by: Creation Date (Old First)</option>
-            <option value="recent-desc">Sort by: Upload Date (New First)</option>
-            <option value="recent-asc">Sort by: Upload Date (Old First)</option>
-            <option value="south-north-asc">Sort by: South to North</option>
-            <option value="south-north-desc">Sort by: North to South</option>
-        </select>
+        
 
         <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
         <button id="toggle-view">Show Backs</button>
