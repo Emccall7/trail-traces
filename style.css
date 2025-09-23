@@ -1202,7 +1202,7 @@ html, body {
   cursor:pointer; padding:0 4px;
 }
 @media (max-width: 768px){
-  #search-input{ min-width: 180px; font-size:16px; }
+  #search-input{ min-width: 180px; font-size:18px; }
 }
 
 /* WebKit (Safari/Chrome/Brave/Edge Chromium) */
