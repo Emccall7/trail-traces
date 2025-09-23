@@ -29,18 +29,6 @@
 
 
     <link rel="icon" href="favicon.png" type="image/png">
-
-    <meta id="vp" name="viewport" content="width=device-width, initial-scale=1">
-    <script>
-    const vp = document.getElementById('vp');
-    const si = document.getElementById('search-input');
-    const disableZoom = () => vp.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1');
-    const enableZoom  = () => vp.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=10');
-    if (si) {
-        si.addEventListener('focus', disableZoom);
-        si.addEventListener('blur',  enableZoom);
-    }
-    </script>
 </head>
 
 <!-- Google tag (gtag.js) -->
