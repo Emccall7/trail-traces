@@ -1195,20 +1195,21 @@ html, body {
   background:#fff; border:0px solid #008286; border-radius:20px; padding:2px 6px;
 }
 #search-input {
-  border:none; outline:none; font-size:16px; padding:4px 6px; min-width: 210px;
+  border:none; outline:none; font-size:16px; padding:4px 6px; min-width: 240px;
 }
 #search-clear {
   border:none; background:transparent; color:#008286; font-size:18px; line-height:1;
   cursor:pointer; padding:0 4px;
 }
 @media (max-width: 768px){
-  #search-input{ min-width: 180px; font-size:18px; }
+  #search-input{ min-width: 200px; font-size:18px; }
 }
 
 /* WebKit (Safari/Chrome/Brave/Edge Chromium) */
 #search-input::-webkit-search-cancel-button,
 #search-input::-webkit-search-decoration,
 #search-input::-webkit-search-results-button,
+#search-input::-webkit-s
 #search-input::-webkit-search-results-decoration {
   display: none;
 }
