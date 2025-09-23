@@ -1202,6 +1202,10 @@ html, body {
   -webkit-appearance: none;   /* was textfield — switch to none */
   appearance: none;
 }
+#search-wrap[type="search"]{
+  -webkit-appearance: none;   /* was textfield — switch to none */
+  appearance: none;
+}
 
 #search-clear {
   border:none; background:transparent; color:#008286; font-size:18px; line-height:1;
