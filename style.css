@@ -1749,3 +1749,55 @@ body.sidebar-expanded #toggle-container { left: var(--sidebar-expanded-w); }
         touch-action: none;
     }
 }
+
+
+
+
+
+.location-group-marker {
+    background: var(--teal);
+    color: #fff;
+    border: 3px solid #fff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-family: Georgia, serif;
+}
+
+.location-group-marker.is-single {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.location-group-marker.is-cluster {
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 18px;
+}
+
+.location-group-marker.selected-location-group {
+    background: #f6a13a;
+    color: #fff;
+    border-color: #fff;
+    box-shadow: 0 0 0 4px rgba(246, 161, 58, 0.28),
+                0 3px 10px rgba(0, 0, 0, 0.32);
+    z-index: 999 !important;
+}
+
+.location-group-count {
+    line-height: 1;
+}
+
+
+.cluster-bubble.selected-cluster,
+.location-group-marker.selected {
+    background: #f6a13a !important;
+    color: #fff !important;
+    border-color: #fff !important;
+    box-shadow:
+        0 0 0 4px rgba(246, 161, 58, 0.28),
+        0 3px 10px rgba(0, 0, 0, 0.32) !important;
+}

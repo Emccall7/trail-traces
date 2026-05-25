@@ -258,14 +258,19 @@ let markers = L.markerClusterGroup({
     animateAddingMarkers: false,
 
     iconCreateFunction: function (cluster) {
-        const postcardCount = getPostcardsFromCluster(cluster).length;
+        const clusterPostcards = getPostcardsFromCluster(cluster);
+        const postcardCount = clusterPostcards.length;
+
+        const containsSelected = clusterPostcards.some(
+            p => String(p.postcardID) === String(selectedPostcardID)
+        );
 
         let sizeClass = "small";
         if (postcardCount >= 50) sizeClass = "large";
         else if (postcardCount >= 10) sizeClass = "medium";
 
         return L.divIcon({
-            html: `<div class="cluster-bubble ${sizeClass}">${postcardCount}</div>`,
+            html: `<div class="cluster-bubble ${sizeClass} ${containsSelected ? "selected-cluster" : ""}">${postcardCount}</div>`,
             className: "custom-cluster-icon",
             iconSize: L.point(44, 44),
             iconAnchor: [22, 22]
@@ -367,22 +372,37 @@ function buildLocationGroups() {
 function createLocationGroupIcon(group) {
     const count = group.postcards.length;
 
-    if (count === 1) {
-        const postcardID = escapeHTML(group.postcards[0].postcardID);
+    const containsSelected = group.postcards.some(
+        p => String(p.postcardID) === String(selectedPostcardID)
+    );
 
-        return L.divIcon({
-            html: `<div class="custom-marker" data-id="${postcardID}"></div>`,
-            className: "custom-marker-container",
-            iconSize: [15, 15],
-            iconAnchor: [7.5, 7.5]
-        });
-    }
+    const className = [
+        "custom-marker",
+        "location-group-marker",
+        count > 1 ? "is-cluster" : "is-single",
+        containsSelected ? "selected" : ""
+    ].join(" ");
+
+    const html = count > 1
+        ? `<span class="location-group-count">${count}</span>`
+        : "";
 
     return L.divIcon({
-        html: `<div class="location-count-marker-inner">${count}</div>`,
-        className: "location-count-marker",
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        className,
+        html,
+        iconSize: count > 1 ? [46, 46] : [20, 20],
+        iconAnchor: count > 1 ? [23, 23] : [10, 10]
+    });
+}
+
+function refreshLocationGroupMarkerStyles() {
+    if (!markers) return;
+
+    markers.eachLayer(layer => {
+        if (!layer.locationGroup) return;
+
+        const group = layer.locationGroup;
+        layer.setIcon(createLocationGroupIcon(group));
     });
 }
 
@@ -412,13 +432,14 @@ function renderLocationGroupMarkers() {
                     keepPanelState: true,
                     autoPan: false
                 });
+
                 highlightMarker(group.postcards[0].postcardID);
             } else {
-                const selectedInGroup =
-                    group.postcards.find(p => p.postcardID === selectedPostcardID) ||
-                    group.postcards[0];
+                const selectedInGroup = group.postcards.find(
+                    p => String(p.postcardID) === String(selectedPostcardID)
+                );
 
-                openCoordinateGroupPopup(group, selectedInGroup);
+                openCoordinateGroupPopup(group, selectedInGroup || null);
             }
         });
 
@@ -457,7 +478,11 @@ function openCoordinateGroupPopup(groupOrPostcard, selectedPostcard = null) {
 
     if (!group || !Array.isArray(group.postcards) || group.postcards.length <= 1) return;
 
-    const selectedId = selectedPostcard?.postcardID || selectedPostcardID;
+    const selectedId =
+        selectedPostcard &&
+        group.postcards.some(p => String(p.postcardID) === String(selectedPostcard.postcardID))
+            ? String(selectedPostcard.postcardID)
+            : null;
 
     const rows = group.postcards.map(p => {
         const name = p.name || p.trailName || "Anonymous";
@@ -503,7 +528,7 @@ function openMarkerClusterPopup(cluster) {
         const date = p.datePosted || "";
 
         const selected =
-            String(p.postcardID) === String(selectedPostcardID)
+            selectedId && String(p.postcardID) === selectedId
                 ? " selected"
                 : "";
 
@@ -969,12 +994,28 @@ function viewPreviousCard() {
 function highlightMarker(postcardID) {
     if (!postcardID) return;
 
+    selectedPostcardID = postcardID;
+
+    // 1. Highlight any individual visible custom marker
     document.querySelectorAll(".custom-marker").forEach(marker => {
         marker.classList.remove("selected");
-        if (marker.dataset.id === postcardID) {
+
+        if (String(marker.dataset.id) === String(postcardID)) {
             marker.classList.add("selected");
         }
     });
+
+    // 2. Rebuild grouped marker icons so any group containing the selected card
+    // can turn selected too.
+    if (typeof refreshLocationGroupMarkerStyles === "function") {
+        refreshLocationGroupMarkerStyles();
+    }
+
+    // 3. Refresh MarkerCluster icons so larger clusters containing the selected card
+    // can turn selected too.
+    if (markers && typeof markers.refreshClusters === "function") {
+        markers.refreshClusters();
+    }
 }
 
 function highlightSelectedCard() {
