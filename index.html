@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trail Traces</title>
-    
+
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
     <!-- Marker Cluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
@@ -15,54 +15,69 @@
     <!-- Google Fonts -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@300..900&display=swap">
 
-    <!-- Your custom CSS -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.png" type="image/png">
 
     <!-- PapaParse CSV Parser -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-    <!-- put this before your script.js -->
-    <script src="https://unpkg.com/minisearch@6.3.0/dist/umd/index.min.js"></script>
-
-    <!-- put this above your script.js -->
+    <!-- MiniSearch -->
     <script src="https://cdn.jsdelivr.net/npm/minisearch@6.3.0/dist/umd/index.min.js"></script>
 
-
-    <link rel="icon" href="favicon.png" type="image/png">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BLWTLNG5NY"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-BLWTLNG5NY');
+    </script>
 </head>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BLWTLNG5NY"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-BLWTLNG5NY');
-</script>
-
-
-
 
 <body>
     <header class="site-header">
         <h1 class="site-title">TRAIL TRACES</h1>
-        <button id="toggle-gallery">View Gallery</button>
+
+        <div id="map-gallery-toggle" class="map-gallery-toggle" role="group" aria-label="Choose view">
+            <button id="view-map-btn" class="map-gallery-option active" type="button" aria-pressed="true">Map</button>
+            <button id="view-gallery-btn" class="map-gallery-option" type="button" aria-pressed="false">Gallery</button>
+        </div>
+
+        <!-- Kept hidden only so older JS references do not break. -->
+        <button id="toggle-gallery" type="button" hidden aria-hidden="true">View Gallery</button>
     </header>
 
-    <div id="toolbar" class="toolbar">
+    <div id="toolbar" class="toolbar collapsed" aria-expanded="false">
+        <button id="toolbar-toggle" class="toolbar-toggle" type="button" aria-expanded="false">
+            <span class="toolbar-toggle-label">Search / Filter</span>
+            <!-- <span class="toolbar-toggle-icon" aria-hidden="true">⌄</span> -->
+        </button>
+
         <div class="search-wrap">
-            <input id="search-input" type="search" placeholder="Search cards for..." aria-label="Search postcards" />
+            <input
+                id="search-input"
+                type="search"
+                placeholder="Search cards for..."
+                aria-label="Search postcards"
+            >
             <button id="search-clear" type="button" aria-label="Clear search">×</button>
         </div>
-        
-
 
         <div class="smart-sort" id="smart-sort">
-            <button id="sort-trigger" class="sort-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <button
+                id="sort-trigger"
+                class="sort-trigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+            >
                 <span id="sort-label">Newest first</span>
                 <span aria-hidden="true">▾</span>
             </button>
+
             <ul id="sort-menu" class="sort-menu" role="listbox" tabindex="-1">
                 <li role="option" data-value="recent-desc">Most recently added</li>
                 <li role="option" data-value="recent-asc">Least recently added</li>
@@ -70,10 +85,18 @@
                 <li role="option" data-value="date-asc">Oldest</li>
                 <li role="option" data-value="south-north-asc">South → North</li>
                 <li role="option" data-value="south-north-desc">North → South</li>
-                <li role="option" data-value="relevance" class="is-relevance disabled" aria-disabled="true" data-disabled="true">Relevance</li>
+                <li
+                    role="option"
+                    data-value="relevance"
+                    class="is-relevance disabled"
+                    aria-disabled="true"
+                    data-disabled="true"
+                >
+                    Relevance
+                </li>
             </ul>
 
-            <!-- keep your old select to preserve existing code; we’ll keep it in sync -->
+            <!-- Hidden native select kept for existing JS state/sorting logic -->
             <select id="sort-by" hidden>
                 <option value="date-desc" selected>Newest first</option>
                 <option value="date-asc">Oldest first</option>
@@ -84,126 +107,121 @@
                 <option value="relevance">Relevance</option>
             </select>
         </div>
-        
-        <!-- <label for="sort-by" style="color: gray;">Sort By</label> -->
-        <button id="toggle-view">Show Backs</button>
 
-        <!-- Mature toggle (IDs/classes must match) -->
-        <label class="pill-switch" id="mature-toggle">
-            <input type="checkbox" id="toggle-mature" />
-            <span class="pill" aria-hidden="true"></span>
-            <span class="label">Show mature content</span>
+        <div id="side-segmented-control" class="side-segmented-control" role="group" aria-label="Choose postcard side">
+            <button id="show-fronts" class="side-option active" type="button" aria-pressed="true">Fronts</button>
+            <button id="show-backs" class="side-option" type="button" aria-pressed="false">Backs</button>
+        </div>
 
-            <!-- info button that toggles the popover on click -->
-            <button class="info" type="button"
-                    aria-haspopup="dialog"
-                    aria-expanded="false"
-                    aria-controls="mature-popover">i</button>
+        <button id="mature-toggle" class="mature-check-pill" type="button" aria-describedby="mature-popover" aria-expanded="false" aria-pressed="false">
+            <span class="mature-checkmark" aria-hidden="true">☐</span>
+            <span class="mature-check-label">Mature content</span>
+        </button>
 
-            <!-- the popover MUST be inside .pill-switch -->
-            <div id="mature-popover" class="mature-popover" role="dialog" tabindex="-1">
-            <div class="popover-title">
-                <span class="badge-18">18+</span> Mature content
-            </div>
-            <p>May contain profanity, sexual themes, explicit language, or other adult material. Mature cards are blurred by default.</p>
-            </div>
-        </label>
-        
+        <div id="mature-popover" class="mature-popover" role="tooltip" aria-hidden="true">
+            <p>
+                May contain profanity, sexual themes, explicit language, or other adult material.
+                Mature cards are blurred by default.
+            </p>
+        </div>
     </div>
 
     <div id="map"></div>
-    
-    
+
     <div id="gallery-view" style="display: none;"></div>
 
     <div id="sidebar" class="sidebar">
-        <!-- ✅ Toggle Container for Sidebar (Sticky) -->
-        <div id="toggle-container">
-            <button id="toggle-sidebar" class="toggle-btn">▶</button>
-        </div>
-
-
-        <!-- ✅ Next Card Button → -->
-        <div class="next-card-container">
-            <button id="previous-card" class="next-card-btn">←</button>
-            <button id="next-card" class="next-card-btn">→</button>
-        </div>
-
-
         
+
         <div id="sidebar-content">
             <p>Select a marker or postcard to view details here.</p>
-
-            <div class="postcard-container">
-                <img id="postcard-image" class="postcard-image" alt="Postcard Image">
-                <button id="flip-button" class="flip-btn" style="display: none;">⇆</button>
-                <button id="rotate-button" class="flip-btn">↻</button>
-            </div>
-            
-            <p><strong>From:</strong> <span id="postcard-name"></span></p>
-            <p><strong>Location:</strong> <span id="postcard-location"></span></p>
-            <p><strong>Date:</strong> <span id="postcard-date"></span></p>
-
-            <div class="share-buttons">
-                <button id="copy-link" class="share-btn">Share</button>
-            </div>
-
-            
         </div>
 
-         
+        <div id="toggle-container">
+            <button id="toggle-sidebar" class="toggle-btn" type="button" aria-expanded="false">
+                <span class="mobile-grabber" aria-hidden="true"></span>
+                <span class="toggle-peek-row">
+                    <img id="mobile-peek-thumb" class="mobile-peek-thumb" alt="Selected postcard preview">
+                    <span class="toggle-peek-text">View postcard</span>
+                    <span class="toggle-icon" aria-hidden="true">⌃</span>
+                </span>
+            </button>
+        </div>
+
         <div id="about-container">
-            
             <div id="social-links" class="social-links">
-                <a href="https://www.facebook.com/profile.php?id=61575886267611" target="_blank">
+                <a href="https://www.facebook.com/profile.php?id=61575886267611" target="_blank" rel="noopener noreferrer">
                     <img src="images/facebook-icon.png" alt="Facebook" class="social-icon">
                 </a>
-                <a href="https://www.instagram.com/trailtraces" target="_blank">
+
+                <a href="https://www.instagram.com/trailtraces" target="_blank" rel="noopener noreferrer">
                     <img src="images/instagram-icon.png" alt="Instagram" class="social-icon">
                 </a>
             </div>
 
-            <button id="toggle-about">About This Project ▼</button>
-            <div id="about-content" class="hidden">
-                <p><strong>Trail Traces</strong> collects postcards from those who walk, support, and are inspired by the Pacific Crest Trail. It exists to preserve and share trail experiences—moments of challenge, joy, boredom, frustration, peace, connection—through handwritten notes.</p><br>
-                <p>The postcards are mailed to a P.O. Box in Oregon, where they are then digitized and uploaded for the community to view, share, and remember. The project was started by Eden McCall [trail name Bhikkhu], a 2025 northbound PCT thru-hiker, to create a place to share the trail experience with others.</p><br>
-                <p style="font-size: 11px;"><em>Trail Traces is an independent project and is not affiliated with, sponsored by, or endorsed by any organization, business, or institution.</em></p><br>
-                <p style="font-size: 11px;"><em>PCT map data sourced from the Pacific Crest Trail Association. Elevation profile graphic adapted from a design in </em>The Pacific Crest Trail: A Visual Compendium<em> by Josh Powell.</em></p><br>
-                <p style="font-size: 11px;"><em>All postcard images are shared with permission from their creators and are intended for viewing only. Reproducing, downloading, or using these images without consent is a violation of the creators' rights.</em></p><br>
+            <button id="toggle-about" type="button">About This Project ▼</button>
 
-                <p>Questions, ideas, or want to contribute? Send a message to: <a href="mailto:edenmccall@gmail.com">edenmccall@gmail.com</a></p>
+            <div id="about-content" class="hidden">
+                <p>
+                    <strong>Trail Traces</strong> collects postcards from those who walk, support, and are inspired by the Pacific Crest Trail. It exists to preserve and share trail experiences—moments of challenge, joy, boredom, frustration, peace, connection—through handwritten notes.
+                </p>
+                <br>
+
+                <p>
+                    The postcards are mailed to a P.O. Box in Oregon, where they are then digitized and uploaded for the community to view, share, and remember. The project was started by Eden McCall [trail name Bhikkhu], a 2025 northbound PCT thru-hiker, to create a place to share the trail experience with others.
+                </p>
+                <br>
+
+                <p style="font-size: 11px;">
+                    <em>Trail Traces is an independent project and is not affiliated with, sponsored by, or endorsed by any organization, business, or institution.</em>
+                </p>
+                <br>
+
+                <p style="font-size: 11px;">
+                    <em>PCT map data sourced from the Pacific Crest Trail Association. Elevation profile graphic adapted from a design in </em>The Pacific Crest Trail: A Visual Compendium<em> by Josh Powell.</em>
+                </p>
+                <br>
+
+                <p style="font-size: 11px;">
+                    <em>All postcard images are shared with permission from their creators and are intended for viewing only. Reproducing, downloading, or using these images without consent is a violation of the creators' rights.</em>
+                </p>
+                <br>
+
+                <p>
+                    Questions, ideas, or want to contribute?
+                    Send a message to:
+                    <a href="mailto:edenmccall@gmail.com">edenmccall@gmail.com</a>
+                </p>
             </div>
         </div>
     </div>
 
-    
-
-
-
-
-
-
-
-
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Marker Cluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+    <!-- Custom JS -->
     <script src="script.js"></script>
 
-</body>
+    <!-- Social click tracking -->
+    <script>
+        document.querySelectorAll('.social-links a').forEach(icon => {
+            icon.addEventListener('click', function() {
+                const platform = this.href.includes('instagram') ? 'Instagram' : 'Facebook';
 
-<script>
-    document.querySelectorAll('.social-links a').forEach(icon => {
-        icon.addEventListener('click', function() {
-            const platform = this.href.includes('instagram') ? 'Instagram' : 'Facebook';
-            gtag('event', 'click', {
-                'event_category': 'Social Media',
-                'event_label': platform,
-                'value': 1
+                if (typeof gtag === "function") {
+                    gtag('event', 'click', {
+                        event_category: 'Social Media',
+                        event_label: platform,
+                        value: 1
+                    });
+                }
+
+                console.log(`Clicked ${platform} Link`);
             });
-            console.log(`Clicked ${platform} Link`);
         });
-    });
-</script>
-
+    </script>
+</body>
 </html>
