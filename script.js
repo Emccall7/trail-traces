@@ -399,7 +399,7 @@ function renderLocationGroupMarkers() {
             pane: "postcardMarkerPane",
             icon: createLocationGroupIcon(group)
         });
-        
+
         marker.locationGroup = group;
 
         group.postcards.forEach(postcard => {
@@ -1195,24 +1195,91 @@ function initMobileTapToCollapseSidebar() {
         if (!isMobile()) return;
         if (!isExpanded) return;
 
-        // Do not collapse if the tap came from the sidebar itself
+        // Do not collapse from inside sidebar, toolbar, or popup interactions
         if (e.target.closest("#sidebar")) return;
+        if (e.target.closest("#toolbar")) return;
+        if (e.target.closest(".leaflet-popup")) return;
 
         setSidebarExpanded(false);
     }
 
     if (mapEl) {
         mapEl.addEventListener("click", collapseIfMobileExpanded);
-        mapEl.addEventListener("touchend", collapseIfMobileExpanded, { passive: true });
     }
 
     if (galleryEl) {
         galleryEl.addEventListener("click", collapseIfMobileExpanded);
-        galleryEl.addEventListener("touchend", collapseIfMobileExpanded, { passive: true });
     }
 }
 
 initMobileTapToCollapseSidebar();
+
+function initSidebarContentPullDown() {
+    const sidebarContent = document.getElementById("sidebar-content");
+    if (!sidebar || !sidebarContent) return;
+
+    let startY = 0;
+    let startScrollTop = 0;
+    let pulling = false;
+
+    sidebarContent.addEventListener("touchstart", (e) => {
+        if (!isMobile() || !isExpanded) return;
+        if (!e.touches || e.touches.length !== 1) return;
+
+        startY = e.touches[0].clientY;
+        startScrollTop = sidebarContent.scrollTop;
+        pulling = false;
+    }, { passive: true });
+
+    sidebarContent.addEventListener("touchmove", (e) => {
+        if (!isMobile() || !isExpanded) return;
+        if (!e.touches || e.touches.length !== 1) return;
+
+        const currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+
+        // Only pull the sheet down when the content itself is already at the top
+        if (startScrollTop <= 0 && sidebarContent.scrollTop <= 0 && deltaY > 14) {
+            pulling = true;
+
+            const minH = getCollapsedSheetHeight();
+            const maxH = getExpandedSheetHeight();
+            const nextH = Math.max(minH, Math.min(maxH, maxH - deltaY));
+
+            sidebar.classList.add("is-dragging");
+            sidebar.style.height = `${nextH}px`;
+
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+        }
+    }, { passive: false });
+
+    sidebarContent.addEventListener("touchend", () => {
+        if (!pulling) return;
+
+        const currentH = sidebar.getBoundingClientRect().height;
+        const minH = getCollapsedSheetHeight();
+        const maxH = getExpandedSheetHeight();
+        const midpoint = minH + (maxH - minH) * 0.72;
+
+        sidebar.classList.remove("is-dragging");
+        sidebar.style.height = "";
+
+        setSidebarExpanded(currentH < midpoint ? false : true);
+
+        pulling = false;
+    }, { passive: true });
+
+    sidebarContent.addEventListener("touchcancel", () => {
+        pulling = false;
+        sidebar.classList.remove("is-dragging");
+        sidebar.style.height = "";
+    }, { passive: true });
+}
+
+initSidebarContentPullDown();
+
 
 let sheetDrag = {
     active: false,
@@ -1317,39 +1384,6 @@ if (toggleButton) {
 // ---------------------------------------------------------
 // Mobile toolbar collapse / expand
 // ---------------------------------------------------------
-
-function setToolbarExpanded(expanded) {
-    if (!toolbar || !toolbarToggle) return;
-
-    const open = !!expanded;
-    toolbar.classList.toggle("expanded", open);
-    toolbar.classList.toggle("collapsed", !open);
-    document.body.classList.toggle("toolbar-expanded", open);
-    toolbar.setAttribute("aria-expanded", String(open));
-    toolbarToggle.setAttribute("aria-expanded", String(open));
-
-    const icon = toolbarToggle.querySelector(".toolbar-toggle-icon");
-    if (icon) icon.textContent = open ? "⌃" : "⌄";
-}
-
-if (toolbar && toolbarToggle) {
-    setToolbarExpanded(false);
-
-    toolbarToggle.addEventListener("click", () => {
-        setToolbarExpanded(!toolbar.classList.contains("expanded"));
-    });
-
-    window.addEventListener("resize", () => {
-        if (!isMobile()) {
-            toolbar.classList.remove("expanded", "collapsed");
-            toolbar.setAttribute("aria-expanded", "true");
-            toolbarToggle.setAttribute("aria-expanded", "true");
-            document.body.classList.remove("toolbar-expanded");
-        } else if (!toolbar.classList.contains("expanded")) {
-            setToolbarExpanded(false);
-        }
-    });
-}
 
 // ---------------------------------------------------------
 // About section
@@ -2372,3 +2406,179 @@ syncModernControls();
         });
     }
 })();
+
+// ---------------------------------------------------------
+// Mobile toolbar collapse / expand
+// ---------------------------------------------------------
+
+// ---------------------------------------------------------
+// Mobile toolbar open / close
+// ---------------------------------------------------------
+
+let toolbarGesture = {
+    active: false,
+    moved: false,
+    startY: 0,
+    pointerId: null
+};
+
+function setToolbarExpanded(expanded) {
+    if (!toolbar || !toolbarToggle) return;
+
+    const open = !!expanded;
+
+    toolbar.classList.toggle("expanded", open);
+    toolbar.classList.toggle("collapsed", !open);
+    document.body.classList.toggle("toolbar-expanded", open);
+
+    toolbar.setAttribute("aria-expanded", String(open));
+    toolbarToggle.setAttribute("aria-expanded", String(open));
+}
+
+function initMobileToolbarToggle() {
+    if (!toolbar || !toolbarToggle) return;
+
+    function startGesture(e) {
+        if (!isMobile()) return;
+
+        toolbarGesture.active = true;
+        toolbarGesture.moved = false;
+        toolbarGesture.startY = e.clientY;
+        toolbarGesture.pointerId = e.pointerId;
+
+        // Capture on the element that was actually touched, not always toolbarToggle.
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+
+    function moveGesture(e) {
+        if (!toolbarGesture.active || !isMobile()) return;
+
+        const deltaY = e.clientY - toolbarGesture.startY;
+
+        if (Math.abs(deltaY) > 14) {
+            toolbarGesture.moved = true;
+        }
+    }
+
+    function finishGesture(e) {
+        if (!toolbarGesture.active || !isMobile()) return;
+
+        toolbarGesture.active = false;
+
+        e.currentTarget.releasePointerCapture?.(e.pointerId);
+
+        const deltaY = e.clientY - toolbarGesture.startY;
+        const isOpen = toolbar.classList.contains("expanded");
+
+        // Make closing less touchy than opening.
+        // Drag down to open needs a smaller movement.
+        // Drag up to close needs a more deliberate movement.
+        const openThreshold = 24;
+        const closeThreshold = 60;
+
+        if (!isOpen && deltaY > openThreshold) {
+            setToolbarExpanded(true);
+        }
+
+        if (isOpen && deltaY < -closeThreshold) {
+            setToolbarExpanded(false);
+        }
+
+        setTimeout(() => {
+            toolbarGesture.moved = false;
+            toolbarGesture.pointerId = null;
+        }, 0);
+    }
+
+    function handleToggleClick(e) {
+        if (!isMobile()) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // If this click came after a drag, ignore it.
+        if (toolbarGesture.moved) {
+            toolbarGesture.moved = false;
+            return;
+        }
+
+        setToolbarExpanded(!toolbar.classList.contains("expanded"));
+    }
+
+    function startExpandedToolbarGesture(e) {
+        if (!isMobile()) return;
+        if (!toolbar.classList.contains("expanded")) return;
+
+        // Keep the actual search input normal.
+        if (e.target.closest("#search-input")) return;
+
+        // Keep open dropdown menu interactions normal.
+        if (e.target.closest("#sort-menu")) return;
+
+        // Keep mature popover interactions normal.
+        if (e.target.closest("#mature-popover")) return;
+
+        startGesture(e);
+    }
+
+    function handleExpandedToolbarClick(e) {
+        if (!isMobile()) return;
+        if (!toolbar.classList.contains("expanded")) return;
+
+        // Do not close when using real controls.
+        if (e.target.closest("#toolbar-toggle")) return;
+        if (e.target.closest("#search-input")) return;
+        if (e.target.closest("#search-clear")) return;
+        if (e.target.closest("#sort-trigger")) return;
+        if (e.target.closest("#sort-menu")) return;
+        if (e.target.closest("#side-segmented-control")) return;
+        if (e.target.closest("#mature-toggle")) return;
+        if (e.target.closest("#mature-popover")) return;
+
+        if (toolbarGesture.moved) {
+            toolbarGesture.moved = false;
+            return;
+        }
+
+        setToolbarExpanded(false);
+    }
+
+    // Main collapsed/expanded handle.
+    toolbarToggle.addEventListener("pointerdown", startGesture);
+    toolbarToggle.addEventListener("pointermove", moveGesture);
+    toolbarToggle.addEventListener("pointerup", finishGesture);
+    toolbarToggle.addEventListener("pointercancel", finishGesture);
+    toolbarToggle.addEventListener("click", handleToggleClick);
+
+    // Expanded toolbar can also be dragged upward from most of its area.
+    toolbar.addEventListener("pointerdown", startExpandedToolbarGesture);
+    toolbar.addEventListener("pointermove", moveGesture);
+    toolbar.addEventListener("pointerup", finishGesture);
+    toolbar.addEventListener("pointercancel", finishGesture);
+
+    // Expanded toolbar can be tapped on empty/non-control space to close.
+    toolbar.addEventListener("click", handleExpandedToolbarClick);
+
+    window.addEventListener("resize", () => {
+        toolbarGesture.active = false;
+        toolbarGesture.moved = false;
+        toolbarGesture.pointerId = null;
+
+        if (isMobile()) {
+            if (!toolbar.classList.contains("expanded")) {
+                setToolbarExpanded(false);
+            }
+        } else {
+            toolbar.classList.remove("expanded", "collapsed");
+            toolbar.removeAttribute("aria-expanded");
+            toolbarToggle.setAttribute("aria-expanded", "true");
+            document.body.classList.remove("toolbar-expanded");
+        }
+    });
+
+    if (isMobile()) {
+        setToolbarExpanded(false);
+    }
+}
+
+initMobileToolbarToggle();
