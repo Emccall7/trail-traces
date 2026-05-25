@@ -1259,15 +1259,22 @@ function initSidebarContentPullDown() {
     const sidebarContent = document.getElementById("sidebar-content");
     if (!sidebar || !sidebarContent) return;
 
+    let startX = 0;
     let startY = 0;
     let startScrollTop = 0;
     let pulling = false;
+
+    const CLOSE_PULL_DISTANCE = 130; // require a very intentional pull
+    const START_PULL_AFTER = 45;     // do not even react until this much pull
 
     sidebarContent.addEventListener("touchstart", (e) => {
         if (!isMobile() || !isExpanded) return;
         if (!e.touches || e.touches.length !== 1) return;
 
-        startY = e.touches[0].clientY;
+        const touch = e.touches[0];
+
+        startX = touch.clientX;
+        startY = touch.clientY;
         startScrollTop = sidebarContent.scrollTop;
         pulling = false;
     }, { passive: true });
@@ -1276,38 +1283,57 @@ function initSidebarContentPullDown() {
         if (!isMobile() || !isExpanded) return;
         if (!e.touches || e.touches.length !== 1) return;
 
-        const currentY = e.touches[0].clientY;
-        const deltaY = currentY - startY;
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
 
-        // Only pull the sheet down when the content itself is already at the top
-        if (startScrollTop <= 0 && sidebarContent.scrollTop <= 0 && deltaY > 14) {
-            pulling = true;
+        const isDownward = deltaY > 0;
+        const isMostlyVertical = Math.abs(deltaY) > Math.abs(deltaX) * 1.8;
 
-            const minH = getCollapsedSheetHeight();
-            const maxH = getExpandedSheetHeight();
-            const nextH = Math.max(minH, Math.min(maxH, maxH - deltaY));
+        // Do not interfere with normal scrolling unless it is clearly
+        // a strong downward pull.
+        if (!isDownward || !isMostlyVertical || deltaY < START_PULL_AFTER) {
+            return;
+        }
 
-            sidebar.classList.add("is-dragging");
-            sidebar.style.height = `${nextH}px`;
+        // If the content is not at/near the top, make the user pull much harder.
+        // This prevents accidental collapse while scrolling back up through content.
+        const nearTop = startScrollTop <= 8 || sidebarContent.scrollTop <= 8;
+        const requiredDistance = nearTop ? CLOSE_PULL_DISTANCE : CLOSE_PULL_DISTANCE + 80;
 
-            if (e.cancelable) {
-                e.preventDefault();
-            }
+        if (deltaY < requiredDistance) {
+            return;
+        }
+
+        pulling = true;
+
+        const minH = getCollapsedSheetHeight();
+        const maxH = getExpandedSheetHeight();
+
+        // Once the pull is intentional, let the sheet follow the finger a bit.
+        const visualPull = deltaY - requiredDistance;
+        const nextH = Math.max(
+            minH,
+            Math.min(maxH, maxH - visualPull)
+        );
+
+        sidebar.classList.add("is-dragging");
+        sidebar.style.height = `${nextH}px`;
+
+        if (e.cancelable) {
+            e.preventDefault();
         }
     }, { passive: false });
 
-    sidebarContent.addEventListener("touchend", () => {
-        if (!pulling) return;
-
-        const currentH = sidebar.getBoundingClientRect().height;
-        const minH = getCollapsedSheetHeight();
-        const maxH = getExpandedSheetHeight();
-        const midpoint = minH + (maxH - minH) * 0.72;
+    sidebarContent.addEventListener("touchend", (e) => {
+        if (!isMobile() || !isExpanded) return;
 
         sidebar.classList.remove("is-dragging");
         sidebar.style.height = "";
 
-        setSidebarExpanded(currentH < midpoint ? false : true);
+        if (pulling) {
+            setSidebarExpanded(false);
+        }
 
         pulling = false;
     }, { passive: true });
