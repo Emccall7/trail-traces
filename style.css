@@ -18,7 +18,7 @@
     --sidebar-expanded-w: 60vw;
 
     --mobile-header-h: 50px;
-    --mobile-toolbar-collapsed-h: 48px;
+    --mobile-toolbar-collapsed-h: 44px;
     --mobile-toolbar-expanded-h: 252px;
     --mobile-sheet-collapsed-h: 122px;
 }
@@ -1091,9 +1091,17 @@ body.sidebar-expanded #toggle-container { left: var(--sidebar-expanded-w); }
             gap: 10px;
             align-content: flex-start;
         }
-        body.toolbar-expanded #gallery-view { top: calc(var(--mobile-header-h) + var(--mobile-toolbar-expanded-h)); }
-        .gallery-card { width: calc(50% - 5px); }
 
+        /* Keep gallery in place when mobile toolbar opens.
+          The toolbar overlays the gallery instead of pushing it down. */
+        body.toolbar-expanded #gallery-view {
+            top: calc(var(--mobile-header-h) + var(--mobile-toolbar-collapsed-h));
+        }
+
+        .gallery-card {
+            width: calc(50% - 5px);
+        }
+        
         .sidebar {
             top: auto;
             left: 0;
